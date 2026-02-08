@@ -197,7 +197,8 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 SurvivalIndex API running on port ${PORT}`);
   console.log(`📊 Loaded ${projects.length} projects`);
+  console.log(`🌐 Server bound to 0.0.0.0:${PORT}`);
 });

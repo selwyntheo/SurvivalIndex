@@ -300,10 +300,42 @@ MIT License - feel free to use this project for any purpose.
 
 ## 🙏 Credits
 
+### Framework & Methodology
+
+This platform is based on **Steve Yegge's "Software Survival 3.0"** framework, which provides a systematic approach to evaluating which software will survive in the AI era.
+
+**Original Article**: [Software Survival 3.0](https://steve-yegge.medium.com/software-survival-3-0-97a2a6255f7b) by Steve Yegge
+
+### Survival Score Formula
+
+The survival score is calculated using a weighted formula across six key levers:
+
+```
+Survival Score = (
+  Insight Compression    × 0.20 +
+  Substrate Efficiency   × 0.18 +
+  Broad Utility          × 0.22 +
+  Awareness/Publicity    × 0.15 +
+  Agent Friendliness     × 0.15 +
+  Human Coefficient      × 0.10
+)
+```
+
+**Weight Rationale:**
+- **Broad Utility (22%)**: Most critical - software must solve real problems
+- **Insight Compression (20%)**: Crystallized knowledge is hard to recreate
+- **Substrate Efficiency (18%)**: CPU efficiency matters in AI era
+- **Awareness (15%)**: Discoverability is key for adoption
+- **Agent Friendliness (15%)**: AI agents need easy-to-use tools
+- **Human Coefficient (10%)**: Human preference still matters in some domains
+
+### Technology
+
 Built with modern web technologies and powered by Claude AI for intelligent software evaluation.
 
 ## 🔗 Links
 
+- [Steve Yegge's Software Survival 3.0](https://steve-yegge.medium.com/software-survival-3-0-97a2a6255f7b)
 - [Anthropic Claude](https://www.anthropic.com/claude)
 - [React Documentation](https://react.dev)
 - [Vite Documentation](https://vitejs.dev)
