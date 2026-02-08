@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Star, TrendingUp, Users, Cpu, Brain, Eye, Zap, Heart, Plus, ChevronDown, ChevronUp, ExternalLink, Github, Globe, BookOpen, Award, Filter, ArrowUpDown, Info, X, Check, Sparkles } from 'lucide-react';
+import { Search, Star, TrendingUp, Users, Cpu, Brain, Eye, Zap, Heart, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ExternalLink, Github, Globe, BookOpen, Award, Filter, ArrowUpDown, Info, X, Check, Sparkles, Loader2, Bot } from 'lucide-react';
+import api from './api/client';
 
 // Sample data for demonstration
 const sampleProjects = [
@@ -255,9 +256,9 @@ function LeverSlider({ leverKey, value, onChange, disabled }) {
   );
 }
 
-function ProjectCard({ project, onRate, expanded, onToggle }) {
+function ProjectCard({ project, onRate, expanded, onToggle, onEvaluate, isEvaluating }) {
   const tier = getSurvivalTier(project.survivalScore);
-  
+
   return (
     <div className={`project-card ${expanded ? 'expanded' : ''}`}>
       <div className="card-header" onClick={onToggle}>
@@ -267,6 +268,12 @@ function ProjectCard({ project, onRate, expanded, onToggle }) {
             <div className="project-name-row">
               <h3>{project.name}</h3>
               <span className={`project-type ${project.type}`}>{project.type}</span>
+              {project.aiRating && (
+                <span className="ai-badge" title="AI Evaluated by Claude Sonnet 4.5">
+                  <Bot size={14} />
+                  AI Rated
+                </span>
+              )}
             </div>
             <p className="project-desc">{project.description}</p>
             <div className="project-tags">
@@ -294,38 +301,135 @@ function ProjectCard({ project, onRate, expanded, onToggle }) {
           </button>
         </div>
       </div>
-      
+
       {expanded && (
         <div className="card-expanded">
           <div className="ratings-breakdown">
-            <h4>Survival Breakdown</h4>
-            <div className="lever-bars">
-              {Object.keys(leverInfo).map(key => {
-                const lever = leverInfo[key];
-                const Icon = lever.icon;
-                const value = project.ratings[key];
-                return (
-                  <div key={key} className="lever-bar-row">
-                    <div className="lever-bar-label">
-                      <Icon size={16} style={{ color: lever.color }} />
-                      <span>{lever.name}</span>
+            <h4>Survival Breakdown {project.aiRating && <span style={{ fontSize: '0.9em', opacity: 0.7 }}>(AI Evaluated)</span>}</h4>
+            {project.ratings ? (
+              <>
+                <div className="lever-bars">
+                  {Object.keys(leverInfo).map(key => {
+                    const lever = leverInfo[key];
+                    const Icon = lever.icon;
+                    const value = project.ratings[key];
+                    return (
+                      <div key={key} className="lever-bar-row">
+                        <div className="lever-bar-label">
+                          <Icon size={16} style={{ color: lever.color }} />
+                          <span>{lever.name}</span>
+                        </div>
+                        <div className="lever-bar-container">
+                          <div
+                            className="lever-bar-fill"
+                            style={{
+                              width: `${value * 10}%`,
+                              backgroundColor: lever.color
+                            }}
+                          />
+                        </div>
+                        <span className="lever-bar-value">{value.toFixed(1)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {project.aiRating?.reasoning && (
+                  <div className="ai-reasoning">
+                    <h5>
+                      <Bot size={16} />
+                      AI Analysis by Claude Sonnet 4.5
+                    </h5>
+                    {project.aiRating.reasoning.overall && (
+                      <div className="reasoning-overall">
+                        <p>{project.aiRating.reasoning.overall}</p>
+                      </div>
+                    )}
+                    <details className="reasoning-details">
+                      <summary>View detailed reasoning for each lever</summary>
+                      <div className="reasoning-levers">
+                        {Object.keys(leverInfo).map(key => {
+                          const lever = leverInfo[key];
+                          const Icon = lever.icon;
+                          const reasoning = project.aiRating.reasoning[key];
+                          if (!reasoning) return null;
+                          return (
+                            <div key={key} className="reasoning-item">
+                              <div className="reasoning-lever">
+                                <Icon size={14} style={{ color: lever.color }} />
+                                <strong>{lever.name}</strong>
+                              </div>
+                              <p>{reasoning}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+
+                    {project.aiRating.suggestions && (
+                      <div className="ai-suggestions">
+                        <h6>
+                          <TrendingUp size={16} />
+                          AI Recommendations to Improve Survival Score
+                        </h6>
+
+                        {project.aiRating.suggestions.topPriorities && project.aiRating.suggestions.topPriorities.length > 0 && (
+                          <div className="suggestion-section">
+                            <div className="suggestion-header priority">
+                              <Award size={14} />
+                              <strong>Top Priorities</strong>
+                            </div>
+                            <ul className="suggestion-list">
+                              {project.aiRating.suggestions.topPriorities.map((suggestion, idx) => (
+                                <li key={idx}>{suggestion}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {project.aiRating.suggestions.quickWins && project.aiRating.suggestions.quickWins.length > 0 && (
+                          <div className="suggestion-section">
+                            <div className="suggestion-header quick">
+                              <Zap size={14} />
+                              <strong>Quick Wins</strong>
+                            </div>
+                            <ul className="suggestion-list">
+                              {project.aiRating.suggestions.quickWins.map((suggestion, idx) => (
+                                <li key={idx}>{suggestion}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {project.aiRating.suggestions.longTerm && project.aiRating.suggestions.longTerm.length > 0 && (
+                          <div className="suggestion-section">
+                            <div className="suggestion-header longterm">
+                              <Brain size={14} />
+                              <strong>Long-Term Strategy</strong>
+                            </div>
+                            <ul className="suggestion-list">
+                              {project.aiRating.suggestions.longTerm.map((suggestion, idx) => (
+                                <li key={idx}>{suggestion}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="ai-metadata">
+                      <span>Confidence: {Math.round((project.aiRating.confidence || 0) * 100)}%</span>
+                      <span>Evaluated: {new Date(project.aiRating.analyzedAt).toLocaleDateString()}</span>
                     </div>
-                    <div className="lever-bar-container">
-                      <div 
-                        className="lever-bar-fill" 
-                        style={{ 
-                          width: `${value * 10}%`, 
-                          backgroundColor: lever.color 
-                        }}
-                      />
-                    </div>
-                    <span className="lever-bar-value">{value.toFixed(1)}</span>
                   </div>
-                );
-              })}
-            </div>
+                )}
+              </>
+            ) : (
+              <p style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
+                No ratings yet. Click "Evaluate with AI" to get AI-powered survival analysis.
+              </p>
+            )}
           </div>
-          
+
           <div className="card-actions">
             <div className="card-links">
               {project.url && (
@@ -341,10 +445,35 @@ function ProjectCard({ project, onRate, expanded, onToggle }) {
                 </a>
               )}
             </div>
-            <button className="rate-btn" onClick={() => onRate(project)}>
-              <Star size={16} />
-              Rate This Project
-            </button>
+            <div className="card-actions-right">
+              <button
+                className="ai-evaluate-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEvaluate(project.id);
+                }}
+                disabled={isEvaluating}
+              >
+                {isEvaluating ? (
+                  <>
+                    <Loader2 size={16} className="spinning" />
+                    Evaluating...
+                  </>
+                ) : (
+                  <>
+                    <Bot size={16} />
+                    {project.aiRating ? 'Re-evaluate with AI' : 'Evaluate with AI'}
+                  </>
+                )}
+              </button>
+              <button className="rate-btn" onClick={(e) => {
+                e.stopPropagation();
+                onRate(project);
+              }}>
+                <Star size={16} />
+                Rate This Project
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -569,7 +698,9 @@ function AddProjectModal({ onClose, onSubmit }) {
 }
 
 export default function SurvivalRatingPlatform() {
-  const [projects, setProjects] = useState(sampleProjects);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [evaluating, setEvaluating] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [sortBy, setSortBy] = useState('score');
@@ -577,6 +708,152 @@ export default function SurvivalRatingPlatform() {
   const [ratingProject, setRatingProject] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+  const [itemsPerPage] = useState(12);
+
+  // Auth state
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
+
+  // Check if user is admin
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Check current user on mount
+  useEffect(() => {
+    async function checkAuth() {
+      if (api.auth.isAuthenticated()) {
+        const user = await api.auth.getCurrentUser();
+        setCurrentUser(user);
+      }
+    }
+    checkAuth();
+  }, []);
+
+  // Fetch projects from backend on mount or page change
+  useEffect(() => {
+    loadProjects();
+  }, [currentPage]);
+
+  async function loadProjects() {
+    try {
+      setLoading(true);
+      const response = await api.projects.getAll({
+        page: currentPage,
+        limit: itemsPerPage
+      });
+
+      // Handle paginated response
+      const data = response.data || response;
+      const paginationInfo = response.pagination;
+
+      // Transform backend data to match frontend format
+      const transformedProjects = data.map(project => ({
+        id: project.id,
+        name: project.name,
+        type: project.type,
+        category: project.category,
+        description: project.description,
+        url: project.url,
+        github: project.githubUrl,
+        logo: project.logo || '📦',
+        tags: project.tags ? project.tags.split(',') : [],
+        yearCreated: project.yearCreated,
+        // AI ratings from backend
+        ratings: project.aiRating ? {
+          insightCompression: project.aiRating.insightCompression,
+          substrateEfficiency: project.aiRating.substrateEfficiency,
+          broadUtility: project.aiRating.broadUtility,
+          awareness: project.aiRating.awareness,
+          agentFriction: project.aiRating.agentFriction,
+          humanCoefficient: project.aiRating.humanCoefficient
+        } : null,
+        survivalScore: project.aiRating?.survivalScore || 0,
+        aiRating: project.aiRating, // Keep full AI rating for display
+        totalVotes: 0, // TODO: Calculate from userRatings
+      }));
+
+      setProjects(transformedProjects);
+      setPagination(paginationInfo);
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+      // Fall back to sample data if backend fails
+      setProjects(sampleProjects);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Trigger AI evaluation for a project
+  async function evaluateWithAI(projectId) {
+    // Check if user is admin
+    if (!isAdmin) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    try {
+      setEvaluating(prev => ({ ...prev, [projectId]: true }));
+      const result = await api.aiJudge.evaluate(projectId);
+
+      // Update project with AI rating
+      setProjects(prev => prev.map(p =>
+        p.id === projectId ? {
+          ...p,
+          aiRating: result.aiRating,
+          ratings: {
+            insightCompression: result.aiRating.insightCompression,
+            substrateEfficiency: result.aiRating.substrateEfficiency,
+            broadUtility: result.aiRating.broadUtility,
+            awareness: result.aiRating.awareness,
+            agentFriction: result.aiRating.agentFriction,
+            humanCoefficient: result.aiRating.humanCoefficient
+          },
+          survivalScore: result.aiRating.survivalScore
+        } : p
+      ));
+
+      alert(`✅ AI evaluation complete! ${result.project.name} scored ${result.aiRating.survivalScore} (${result.aiRating.tier}-Tier)`);
+    } catch (error) {
+      console.error('AI evaluation failed:', error);
+      alert(`❌ AI evaluation failed: ${error.message}`);
+    } finally {
+      setEvaluating(prev => ({ ...prev, [projectId]: false }));
+    }
+  }
+
+  // Handle login
+  async function handleLogin(e) {
+    e.preventDefault();
+    setLoggingIn(true);
+    setLoginError('');
+
+    try {
+      const result = await api.auth.login(loginEmail, loginPassword);
+      setCurrentUser(result.user);
+      setShowLoginModal(false);
+      setLoginEmail('');
+      setLoginPassword('');
+    } catch (error) {
+      setLoginError(error.message || 'Login failed');
+    } finally {
+      setLoggingIn(false);
+    }
+  }
+
+  // Handle logout
+  async function handleLogout() {
+    try {
+      await api.auth.logout();
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  }
   
   const filteredProjects = projects
     .filter(p => {
@@ -604,6 +881,12 @@ export default function SurvivalRatingPlatform() {
           </div>
         </div>
         <div className="header-actions">
+          {currentUser && (
+            <div className="user-info">
+              <span className="user-email">{currentUser.email}</span>
+              {isAdmin && <span className="admin-badge">ADMIN</span>}
+            </div>
+          )}
           <button className="header-btn secondary" onClick={() => setShowAbout(true)}>
             <BookOpen size={18} />
             About
@@ -612,13 +895,22 @@ export default function SurvivalRatingPlatform() {
             <Plus size={18} />
             Add Project
           </button>
+          {currentUser ? (
+            <button className="header-btn secondary" onClick={handleLogout}>
+              Logout
+            </button>
+          ) : (
+            <button className="header-btn primary" onClick={() => setShowLoginModal(true)}>
+              Admin Login
+            </button>
+          )}
         </div>
       </header>
       
       <section className="hero-section">
         <div className="hero-badge">
           <Sparkles size={14} />
-          Based on Steve Yegge's Software Survival 3.0
+          AI-Powered Software Survival Analysis
         </div>
         <h1 className="hero-title">
           Software That Will <span>Survive</span> the AI Era
@@ -695,19 +987,79 @@ export default function SurvivalRatingPlatform() {
       <section className="projects-section">
         <div className="section-header">
           <span className="section-title">Survival Index</span>
-          <span className="result-count">{filteredProjects.length} projects found</span>
+          <span className="result-count">
+            {pagination ? `${pagination.total} total projects` : `${filteredProjects.length} projects found`}
+          </span>
         </div>
         <div className="projects-list">
-          {filteredProjects.map(project => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              expanded={expandedCard === project.id}
-              onToggle={() => setExpandedCard(expandedCard === project.id ? null : project.id)}
-              onRate={setRatingProject}
-            />
-          ))}
+          {loading ? (
+            <div className="loading-state">
+              <Loader2 size={48} className="spinning" />
+              <p>Loading projects...</p>
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="empty-state">
+              <p>No projects found</p>
+            </div>
+          ) : (
+            filteredProjects.map(project => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                expanded={expandedCard === project.id}
+                onToggle={() => setExpandedCard(expandedCard === project.id ? null : project.id)}
+                onRate={setRatingProject}
+                onEvaluate={evaluateWithAI}
+                isEvaluating={evaluating[project.id] || false}
+              />
+            ))
+          )}
         </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="pagination">
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              First
+            </button>
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={!pagination.hasPrevPage}
+            >
+              <ChevronLeft size={18} />
+              Previous
+            </button>
+
+            <div className="pagination-info">
+              <span className="page-numbers">
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+              <span className="page-items">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+              </span>
+            </div>
+
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={!pagination.hasNextPage}
+            >
+              Next
+              <ChevronRight size={18} />
+            </button>
+            <button
+              className="pagination-btn"
+              onClick={() => setCurrentPage(pagination.totalPages)}
+              disabled={currentPage === pagination.totalPages}
+            >
+              Last
+            </button>
+          </div>
+        )}
       </section>
       
       {ratingProject && (
@@ -733,35 +1085,112 @@ export default function SurvivalRatingPlatform() {
       {showAddModal && (
         <AddProjectModal
           onClose={() => setShowAddModal(false)}
-          onSubmit={(formData) => {
-            const newProject = {
-              id: projects.length + 1,
-              name: formData.name,
-              type: formData.type,
-              category: formData.category || 'Uncategorized',
-              description: formData.description,
-              url: formData.url,
-              github: formData.github,
-              logo: '📦',
-              ratings: {
-                insightCompression: 5,
-                substrateEfficiency: 5,
-                broadUtility: 5,
-                awareness: 5,
-                agentFriction: 5,
-                humanCoefficient: 5
-              },
-              totalVotes: 0,
-              survivalScore: 5.0,
-              tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-              yearCreated: new Date().getFullYear()
-            };
-            setProjects(prev => [...prev, newProject]);
-            setShowAddModal(false);
+          onSubmit={async (formData) => {
+            try {
+              setLoading(true);
+
+              // Create project in backend
+              const newProject = await api.projects.create({
+                name: formData.name,
+                type: formData.type,
+                category: formData.category || 'Uncategorized',
+                description: formData.description,
+                url: formData.url,
+                githubUrl: formData.github,
+                logo: formData.logo || '📦',
+                tags: formData.tags,
+                yearCreated: formData.yearCreated ? parseInt(formData.yearCreated) : null
+              });
+
+              // Automatically trigger AI evaluation
+              const evaluation = await api.aiJudge.evaluate(newProject.id);
+
+              // Refresh project list
+              await loadProjects();
+
+              alert(`✅ Project "${newProject.name}" added and evaluated!\n\nSurvival Score: ${evaluation.aiRating.survivalScore} (${evaluation.aiRating.tier}-Tier)\n\nReload the page to see AI reasoning.`);
+              setShowAddModal(false);
+            } catch (error) {
+              console.error('Failed to add project:', error);
+              alert(`❌ Failed to add project: ${error.message}`);
+            } finally {
+              setLoading(false);
+            }
           }}
         />
       )}
-      
+
+      {showLoginModal && (
+        <div className="modal-overlay" onClick={() => setShowLoginModal(false)}>
+          <div className="modal-content login-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowLoginModal(false)}>
+              <X size={24} />
+            </button>
+            <div className="login-content">
+              <h3>Admin Login</h3>
+              <p>Only administrators can trigger AI evaluations for projects.</p>
+              <form onSubmit={handleLogin}>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="admin@survivalindex.ai"
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                  />
+                </div>
+                {loginError && (
+                  <div className="login-error">
+                    {loginError}
+                  </div>
+                )}
+                <div className="login-actions">
+                  <button
+                    type="button"
+                    className="cancel-btn"
+                    onClick={() => setShowLoginModal(false)}
+                    disabled={loggingIn}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="submit-btn"
+                    disabled={loggingIn}
+                  >
+                    {loggingIn ? (
+                      <>
+                        <Loader2 size={18} className="spinning" />
+                        Logging in...
+                      </>
+                    ) : (
+                      'Login'
+                    )}
+                  </button>
+                </div>
+              </form>
+              <div className="login-hint">
+                <p><strong>Demo credentials:</strong></p>
+                <p>Email: admin@survivalindex.ai</p>
+                <p>Password: admin123</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAbout && (
         <div className="modal-overlay" onClick={() => setShowAbout(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -771,12 +1200,12 @@ export default function SurvivalRatingPlatform() {
             <div className="about-content">
               <h3>What is SurvivalIndex.ai?</h3>
               <p>
-                Based on <a href="https://steve-yegge.medium.com/software-survival-3-0-97a2a6255f7b" target="_blank" rel="noopener noreferrer">Steve Yegge's "Software Survival 3.0"</a> framework, 
-                this platform helps identify which software will survive in an era where AI can generate code.
+                This platform helps identify which software will survive in an era where AI can generate code.
+                Using advanced AI analysis, we evaluate projects across six critical survival levers.
               </p>
               <p>
-                The core insight: Not all software will be re-synthesized by AI. Software with high "Survival Ratios" 
-                represents crystallized knowledge that would be crazy to recreate from scratch.
+                The core insight: Not all software will be re-synthesized by AI. Software with high survival scores
+                represents crystallized knowledge that would be inefficient to recreate from scratch.
               </p>
               
               <h3>The Six Survival Levers</h3>

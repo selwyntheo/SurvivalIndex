@@ -2,7 +2,7 @@
 
 **Software That Will Survive the AI Era**
 
-A crowdsourced rating platform for open source and SaaS projects based on [Steve Yegge's "Software Survival 3.0"](https://steve-yegge.medium.com/software-survival-3-0-97a2a6255f7b) framework. Help AI agents discover battle-tested software that won't be re-invented.
+An AI-powered rating platform for open source and SaaS projects that evaluates software survival likelihood in the age of AI code generation. Help AI agents discover battle-tested software that won't be re-invented.
 
 ![SurvivalIndex.ai](https://img.shields.io/badge/Status-Active-success)
 ![React](https://img.shields.io/badge/React-18.3-blue)
@@ -57,7 +57,10 @@ For domains where humans prefer human work, this matters. Some software will sur
 
 ### Prerequisites
 
-- Node.js 18+ and npm/yarn/pnpm
+- **Node.js 18+** and npm
+- **PostgreSQL** database (local or hosted like Supabase/Neon)
+- **Anthropic API Key** - Get from [Anthropic Console](https://console.anthropic.com/)
+- **GitHub Token** (optional) - For enhanced project analysis
 
 ### Installation
 
@@ -66,50 +69,197 @@ For domains where humans prefer human work, this matters. Some software will sur
 git clone <your-repo-url>
 cd SurvivalIndex
 
-# Install dependencies
+# Install all workspace dependencies
 npm install
+```
 
-# Start development server
+### Backend Setup
+
+```bash
+cd apps/backend
+
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your credentials
+nano .env
+```
+
+**Example `.env`:**
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/survivalindex?schema=public"
+ANTHROPIC_API_KEY="sk-ant-api03-..."
+GITHUB_TOKEN="ghp_..." # Optional but recommended
+PORT=3001
+NODE_ENV="development"
+FRONTEND_URL="http://localhost:5173"
+```
+
+### Database Setup
+
+```bash
+# From apps/backend directory
+npm run prisma:generate    # Generate Prisma client
+npm run prisma:migrate     # Create database tables
+npm run seed               # Seed with 33 sample projects
+```
+
+### Run the Application
+
+**Option A: Run both frontend and backend**
+```bash
+# From project root
 npm run dev
 ```
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3001
 
-The application will be available at `http://localhost:5173`
-
-### Build for Production
-
+**Option B: Run separately**
 ```bash
-npm run build
+# Terminal 1
+npm run dev:frontend
+
+# Terminal 2
+npm run dev:backend
 ```
 
-The production-ready files will be in the `dist` directory.
-
-### Preview Production Build
+### Trigger AI Evaluations
 
 ```bash
-npm run preview
+# Evaluate a single project
+curl -X POST http://localhost:3001/api/ai-judge/evaluate/1
+
+# Batch evaluate all projects
+curl -X POST http://localhost:3001/api/ai-judge/batch-evaluate \
+  -H "Content-Type: application/json" \
+  -d '{"projectIds": [1,2,3,4,5]}'
 ```
 
 ## 🛠️ Tech Stack
 
+### Frontend
 - **React 18.3** - UI framework
 - **Vite 5.4** - Build tool and dev server
 - **Lucide React** - Beautiful icon library
 - **CSS3** - Custom styling with modern features
 - **Google Fonts** - Outfit & JetBrains Mono
 
+### Backend
+- **Node.js** - Runtime environment
+- **Express** - Web framework
+- **CORS** - Cross-origin resource sharing
+
 ## 📁 Project Structure
 
 ```
 SurvivalIndex/
-├── src/
-│   ├── App.jsx          # Main application component
-│   ├── main.jsx         # React entry point
-│   └── index.css        # Global styles
-├── index.html           # HTML template
-├── package.json         # Dependencies and scripts
-├── vite.config.js       # Vite configuration
-└── README.md           # This file
+├── src/                    # Frontend source
+│   ├── App.jsx            # Main React component
+│   ├── main.jsx           # React entry point
+│   ├── index.css          # Global styles
+│   └── config.js          # API configuration
+├── backend/               # Backend API service
+│   ├── server.js          # Express API server
+│   ├── package.json       # Backend dependencies
+│   └── README.md          # Backend documentation
+├── .do/                   # DigitalOcean deployment
+│   ├── app.yaml           # App Platform config
+│   └── deploy.md          # Deployment guide
+├── index.html             # HTML template
+├── package.json           # Frontend dependencies
+├── vite.config.js         # Vite configuration
+└── README.md              # This file
+│   │   └── package.json
+│   └── backend/             # Express API
+│       ├── src/
+│       │   ├── agents/
+│       │   │   └── judge.js     # AI Judge agent
+│       │   ├── routes/
+│       │   │   ├── projects.js
+│       │   │   ├── ratings.js
+│       │   │   └── ai-judge.js
+│       │   ├── services/
+│       │   │   ├── projectService.js
+│       │   │   └── aiJudgeService.js
+│       │   ├── config/
+│       │   │   └── database.js
+│       │   ├── scripts/
+│       │   │   └── seed.js
+│       │   └── server.js
+│       ├── prisma/
+│       │   └── schema.prisma
+│       ├── .env.example
+│       └── package.json
+└── package.json             # Workspace config
 ```
+
+## 🤖 AI Judge Agent
+
+The **AI Judge** is the core innovation - an LLM-powered agent that autonomously evaluates projects:
+
+### How it works:
+
+1. **Data Gathering**
+   - Fetches GitHub metrics (stars, forks, commits, activity)
+   - Analyzes repository health and maintenance status
+
+2. **LLM Evaluation**
+   - Uses Anthropic Claude Sonnet 4.5 to score each of the 6 survival levers
+   - Provides detailed reasoning for each score
+   - Returns confidence level (0-1)
+
+3. **Scoring Algorithm**
+   - Calculates weighted survival score from the 6 levers
+   - Assigns tier (S/A/B/C/D/F) based on score
+   - Stores results in PostgreSQL database
+
+4. **API Access**
+   - On-demand evaluation via REST API
+   - Batch processing for multiple projects
+   - Automatic re-evaluation of stale ratings
+
+### Example AI Judge Response:
+
+```json
+{
+  "scores": {
+    "insightCompression": 9.2,
+    "substrateEfficiency": 9.5,
+    "broadUtility": 9.8,
+    "awareness": 9.7,
+    "agentFriction": 7.8,
+    "humanCoefficient": 8.5
+  },
+  "survivalScore": 9.1,
+  "tier": "S",
+  "confidence": 0.92,
+  "reasoning": {
+    "insightCompression": "PostgreSQL encodes 30+ years of database research...",
+    "substrateEfficiency": "Extremely efficient on commodity CPUs...",
+    "overall": "PostgreSQL is immortal - would be insane to re-synthesize..."
+  }
+}
+```
+
+## 📡 API Endpoints
+
+### Projects
+- `GET /api/projects` - List all projects (with filters)
+- `GET /api/projects/:id` - Get single project
+- `GET /api/projects/leaderboard` - Get ranked projects
+- `POST /api/projects` - Create new project
+- `PUT /api/projects/:id` - Update project
+- `DELETE /api/projects/:id` - Delete project
+
+### AI Judge
+- `POST /api/ai-judge/evaluate/:projectId` - Evaluate single project
+- `POST /api/ai-judge/batch-evaluate` - Evaluate multiple projects
+- `POST /api/ai-judge/reevaluate-stale?daysOld=30` - Re-evaluate old ratings
+
+### User Ratings
+- `POST /api/ratings` - Submit community rating
+- `GET /api/ratings/:projectId` - Get all ratings for project
+- `GET /api/ratings/:projectId/average` - Get average community rating
 
 ## 🎨 Design Philosophy
 
@@ -150,11 +300,11 @@ MIT License - feel free to use this project for any purpose.
 
 ## 🙏 Credits
 
-Based on the brilliant framework by [Steve Yegge](https://steve-yegge.medium.com/software-survival-3-0-97a2a6255f7b).
+Built with modern web technologies and powered by Claude AI for intelligent software evaluation.
 
 ## 🔗 Links
 
-- [Steve Yegge's Software Survival 3.0](https://steve-yegge.medium.com/software-survival-3-0-97a2a6255f7b)
+- [Anthropic Claude](https://www.anthropic.com/claude)
 - [React Documentation](https://react.dev)
 - [Vite Documentation](https://vitejs.dev)
 - [Lucide Icons](https://lucide.dev)
