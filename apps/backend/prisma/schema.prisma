@@ -11,16 +11,22 @@ datasource db {
 }
 
 model Project {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  type        String   // 'open-source' | 'saas'
-  category    String
-  description String
-  url         String?
-  githubUrl   String?
-  logo        String?  // emoji or image url
-  tags        String?  // comma-separated tags
-  yearCreated Int?
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  type          String   // 'open-source' | 'saas' | 'hybrid'
+  category      String
+  description   String
+  url           String?
+  githubUrl     String?
+  logo          String?  // emoji or image url
+  tags          String?  // comma-separated tags
+  yearCreated   Int?
+  
+  // New enhanced fields
+  selfHostable  Boolean  @default(false)  // Can be self-hosted
+  license       String?  // e.g., 'MIT', 'Apache-2.0', 'GPL-3.0', 'Proprietary'
+  techStack     String?  // comma-separated tech stack (e.g., 'Rust,PostgreSQL,React')
+  alternativeTo String?  // comma-separated list of alternatives (e.g., 'Redis,Memcached')
 
   // AI-generated scores
   aiRating    AIRating?
@@ -34,6 +40,7 @@ model Project {
 
   @@index([type])
   @@index([category])
+  @@index([selfHostable])
 }
 
 model AIRating {
