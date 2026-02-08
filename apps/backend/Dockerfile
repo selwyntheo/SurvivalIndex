@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for Prisma)
-RUN npm ci
+RUN npm install
 
 # Copy Prisma schema
 COPY prisma ./prisma
@@ -27,7 +27,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm install --only=production
 
 # Copy Prisma schema and generated client from builder
 COPY --from=builder /app/prisma ./prisma
@@ -53,4 +53,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8080/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Run migrations and start server
-CMD npx prisma migrate deploy && node src/server.js
+CMD ["sh", "-c", "npx prisma migrate deploy && node src/server.js"]
