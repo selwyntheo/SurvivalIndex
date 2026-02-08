@@ -98,7 +98,7 @@ open https://YOUR-APP-survivalindex-frontend.ondigitalocean.app
 
 1. **DigitalOcean Console** → Your App → **Settings** → **Domains**
 2. Click **"Add Domain"**
-3. Enter: `survivalindex.ai` and `api.survivalindex.ai`
+3. Enter: `survivalindex.org` and `api.survivalindex.org`
 4. Update your domain's nameservers to:
    - `ns1.digitalocean.com`
    - `ns2.digitalocean.com`

@@ -1,6 +1,6 @@
 # SurvivalIndex Backend API
 
-Backend service for the SurvivalIndex.ai platform.
+Backend service for the SurvivalIndex.org platform.
 
 ## API Endpoints
 

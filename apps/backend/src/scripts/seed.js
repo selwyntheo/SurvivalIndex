@@ -55,14 +55,14 @@ async function main() {
     // Create default admin user
     console.log('👤 Creating default admin user...');
     const adminUser = await authService.createUser({
-      email: 'admin@survivalindex.ai',
+      email: 'admin@SurvivalIndex.org',
       password: 'admin123',
       role: 'admin',
       name: 'Admin User'
     });
     console.log(`✅ Admin user created: ${adminUser.email}`);
     console.log('   📝 Login credentials:');
-    console.log('      Email: admin@survivalindex.ai');
+    console.log('      Email: admin@SurvivalIndex.org');
     console.log('      Password: admin123');
     console.log('   ⚠️  IMPORTANT: Change this password in production!\n');
 
@@ -99,7 +99,7 @@ async function main() {
     console.log('\n💡 Next steps:');
     console.log('   1. Start the backend: npm run dev:backend');
     console.log('   2. Login as admin: POST /api/auth/login');
-    console.log('      Body: {"email": "admin@survivalindex.ai", "password": "admin123"}');
+    console.log('      Body: {"email": "admin@SurvivalIndex.org", "password": "admin123"}');
     console.log('   3. Trigger AI evaluations: POST /api/ai-judge/evaluate/:projectId (Admin only)');
     console.log('   4. View projects: GET /api/projects\n');
 

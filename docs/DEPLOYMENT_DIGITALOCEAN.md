@@ -27,11 +27,11 @@ Internet
     │
     ├─> Frontend (React/Vite)
     │   └─> Deployed on: DO App Platform or Static Sites
-    │       └─> URL: https://survivalindex.ai
+    │       └─> URL: https://survivalindex.org
     │
     └─> Backend API (Express + AI Judge)
         └─> Deployed on: DO App Platform or Droplet
-            └─> URL: https://api.survivalindex.ai
+            └─> URL: https://api.survivalindex.org
             └─> Database: PostgreSQL (Managed Database)
             └─> External API: Anthropic Claude
 ```
@@ -266,7 +266,7 @@ ANTHROPIC_API_KEY="sk-ant-api03-YOUR_KEY_HERE"
 GITHUB_TOKEN="ghp_YOUR_TOKEN_HERE"
 NODE_ENV="production"
 PORT=3001
-FRONTEND_URL="https://survivalindex.ai"
+FRONTEND_URL="https://survivalindex.org"
 EOF
 
 # Generate Prisma client
@@ -292,7 +292,7 @@ cd ~/survivalindex/apps/frontend
 npm install
 
 # Create production .env
-echo "VITE_API_URL=https://api.survivalindex.ai" > .env.production
+echo "VITE_API_URL=https://api.survivalindex.org" > .env.production
 
 # Build
 npm run build
@@ -307,13 +307,13 @@ sudo chown -R www-data:www-data /var/www/survivalindex
 
 ```bash
 # Backend API reverse proxy
-sudo nano /etc/nginx/sites-available/api.survivalindex.ai
+sudo nano /etc/nginx/sites-available/api.survivalindex.org
 ```
 
 ```nginx
 server {
     listen 80;
-    server_name api.survivalindex.ai;
+    server_name api.survivalindex.org;
 
     location / {
         proxy_pass http://localhost:3001;
@@ -331,13 +331,13 @@ server {
 
 ```bash
 # Frontend static site
-sudo nano /etc/nginx/sites-available/survivalindex.ai
+sudo nano /etc/nginx/sites-available/survivalindex.org
 ```
 
 ```nginx
 server {
     listen 80;
-    server_name survivalindex.ai www.survivalindex.ai;
+    server_name survivalindex.org www.survivalindex.org;
     root /var/www/survivalindex;
     index index.html;
 
@@ -355,8 +355,8 @@ server {
 
 ```bash
 # Enable sites
-sudo ln -s /etc/nginx/sites-available/api.survivalindex.ai /etc/nginx/sites-enabled/
-sudo ln -s /etc/nginx/sites-available/survivalindex.ai /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/api.survivalindex.org /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/survivalindex.org /etc/nginx/sites-enabled/
 sudo rm /etc/nginx/sites-enabled/default
 
 # Test and reload
@@ -368,8 +368,8 @@ sudo systemctl reload nginx
 
 ```bash
 # Get SSL certificates
-sudo certbot --nginx -d survivalindex.ai -d www.survivalindex.ai
-sudo certbot --nginx -d api.survivalindex.ai
+sudo certbot --nginx -d survivalindex.org -d www.survivalindex.org
+sudo certbot --nginx -d api.survivalindex.org
 
 # Auto-renewal is configured by default
 # Test renewal:
@@ -465,14 +465,14 @@ ANTHROPIC_API_KEY="sk-ant-api03-..."
 GITHUB_TOKEN="ghp_..."
 NODE_ENV="production"
 PORT=3001
-FRONTEND_URL="https://survivalindex.ai"
+FRONTEND_URL="https://survivalindex.org"
 ```
 
 ### Frontend Environment Variables
 
 ```bash
 # Build-time variable
-VITE_API_URL="https://api.survivalindex.ai"
+VITE_API_URL="https://api.survivalindex.org"
 ```
 
 ### Security Best Practices
@@ -614,7 +614,7 @@ pm2 logs --json > /var/log/survivalindex.log
 - **DigitalOcean Monitoring** (free with droplet)
 
 **Setup Health Checks:**
-- Endpoint: `https://api.survivalindex.ai/api/health`
+- Endpoint: `https://api.survivalindex.org/api/health`
 - Interval: 5 minutes
 - Alert: Email/Slack when down
 

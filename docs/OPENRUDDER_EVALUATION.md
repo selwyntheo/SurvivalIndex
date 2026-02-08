@@ -197,7 +197,7 @@
 ---
 
 **Evaluated by:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
-**Platform:** SurvivalIndex.ai
+**Platform:** SurvivalIndex.org
 **Date:** February 7, 2026
 
 ---

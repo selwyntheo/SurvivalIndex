@@ -249,7 +249,7 @@ class AIJudge {
   buildScoringPrompt(projectData) {
     const { name, description, type, category, url, githubUrl, githubData, tags, yearCreated } = projectData;
 
-    return `You are an AI Judge for SurvivalIndex.ai, a platform that rates software's likelihood of survival in the AI era.
+    return `You are an AI Judge for SurvivalIndex.org, a platform that rates software's likelihood of survival in the AI era.
 
 Your task is to evaluate the software project "${name}" across 6 critical survival levers and provide scores from 0-10 for each.
 

@@ -1,7 +1,7 @@
 {
   "name": "survivalindex-backend",
   "version": "1.0.0",
-  "description": "Backend API for SurvivalIndex.ai",
+  "description": "Backend API for SurvivalIndex.org",
   "main": "server.js",
   "type": "module",
   "scripts": {

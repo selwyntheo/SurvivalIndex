@@ -1,10 +1,10 @@
-# SurvivalIndex.ai
+# SurvivalIndex.org
 
 **Software That Will Survive the AI Era**
 
 An AI-powered rating platform for open source and SaaS projects that evaluates software survival likelihood in the age of AI code generation. Help AI agents discover battle-tested software that won't be re-invented.
 
-![SurvivalIndex.ai](https://img.shields.io/badge/Status-Active-success)
+![SurvivalIndex.org](https://img.shields.io/badge/Status-Active-success)
 ![React](https://img.shields.io/badge/React-18.3-blue)
 ![Vite](https://img.shields.io/badge/Vite-5.4-purple)
 
@@ -12,7 +12,7 @@ An AI-powered rating platform for open source and SaaS projects that evaluates s
 
 In an era where AI can generate code, which software will survive? Not all software will be re-synthesized by AI. Software with high "Survival Ratios" represents crystallized knowledge that would be crazy to recreate from scratch.
 
-SurvivalIndex.ai provides a platform to rate and discover software across six critical survival levers, helping both humans and AI agents identify truly valuable, battle-tested tools.
+SurvivalIndex.org provides a platform to rate and discover software across six critical survival levers, helping both humans and AI agents identify truly valuable, battle-tested tools.
 
 ## 🔑 The Six Survival Levers
 

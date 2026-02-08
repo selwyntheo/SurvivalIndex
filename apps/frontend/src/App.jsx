@@ -876,7 +876,7 @@ export default function SurvivalRatingPlatform() {
         <div className="logo-section">
           <div className="logo">S</div>
           <div className="logo-text">
-            <h1>SurvivalIndex.ai</h1>
+            <h1>SurvivalIndex.org</h1>
             <p>RATE • DISCOVER • SURVIVE</p>
           </div>
         </div>
@@ -1198,7 +1198,7 @@ export default function SurvivalRatingPlatform() {
               <X size={24} />
             </button>
             <div className="about-content">
-              <h3>What is SurvivalIndex.ai?</h3>
+              <h3>What is SurvivalIndex.org?</h3>
               <p>
                 This platform helps identify which software will survive in an era where AI can generate code.
                 Using advanced AI analysis, we evaluate projects across six critical survival levers.
