@@ -1,60 +1,11 @@
 #
-# DigitalOcean App Platform Specification
-# Deploy SurvivalIndex with: doctl apps create --spec .do/app.yaml
+# DigitalOcean App Platform Specification - Frontend Only
+# Backend is deployed separately via Docker on a Droplet
+# Deploy with: doctl apps update 6affe60f-7a82-4713-9f9a-9d5936b3762c --spec .do/app.yaml
 #
 
 name: survivalindex
 region: nyc
-
-# Backend API Service
-services:
-  - name: backend
-    github:
-      repo: selwyntheo/survivalindex
-      branch: main
-      deploy_on_push: true
-
-    source_dir: /apps/backend
-
-    build_command: npm install && npx prisma generate && npx prisma migrate deploy
-    run_command: node src/server.js
-
-    envs:
-      - key: NODE_ENV
-        scope: BUILD_TIME
-        value: development
-
-      - key: PORT
-        scope: RUN_TIME
-        value: "8080"
-
-      - key: DATABASE_URL
-        scope: RUN_AND_BUILD_TIME
-        value: file:./prod.db
-
-      - key: FRONTEND_URL
-        scope: RUN_TIME
-        value: ${frontend.PUBLIC_URL}
-
-      - key: ANTHROPIC_API_KEY
-        scope: RUN_TIME
-        type: SECRET
-
-    http_port: 8080
-
-    health_check:
-      http_path: /api/health
-      initial_delay_seconds: 30
-      period_seconds: 10
-      timeout_seconds: 5
-      success_threshold: 1
-      failure_threshold: 3
-
-    instance_count: 1
-    instance_size_slug: basic-xxs  # 512MB RAM, $5/month
-
-    routes:
-      - path: /api
 
 # Frontend Static Site
 static_sites:
@@ -66,13 +17,13 @@ static_sites:
 
     source_dir: /apps/frontend
 
-    build_command: npm install && npm run build && pwd && ls -la && ls -la dist/
+    build_command: npm install && npm run build
     output_dir: dist
 
     envs:
       - key: VITE_API_URL
         scope: BUILD_TIME
-        value: ${backend.PUBLIC_URL}
+        value: "http://YOUR_DROPLET_IP:8080"
 
     routes:
       - path: /
