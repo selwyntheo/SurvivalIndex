@@ -29,3 +29,9 @@ static_sites:
       - path: /
 
     catchall_document: index.html
+
+# Custom domains
+domains:
+  - domain: survivalindex.org
+    type: PRIMARY
+    zone: survivalindex.org
