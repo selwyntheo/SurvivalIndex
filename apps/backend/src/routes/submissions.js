@@ -1,6 +1,6 @@
-const express = require('express');
-const { PrismaClient } = require('@prisma/client');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -303,4 +303,4 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
