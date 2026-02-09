@@ -23,7 +23,7 @@ static_sites:
     envs:
       - key: VITE_API_URL
         scope: BUILD_TIME
-        value: "http://YOUR_DROPLET_IP:8080"
+        value: "https://api.survivalindex.org"
 
     routes:
       - path: /

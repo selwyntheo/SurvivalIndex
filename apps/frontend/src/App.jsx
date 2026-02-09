@@ -567,13 +567,19 @@ function AddProjectModal({ onClose, onSubmit }) {
     category: '',
     description: '',
     url: '',
-    github: '',
-    tags: ''
+    githubUrl: '',
+    tags: '',
+    license: '',
+    techStack: '',
+    selfHostable: false,
+    alternativeTo: '',
+    submittedBy: '',
+    submitterEmail: ''
   });
   const [submitted, setSubmitted] = useState(false);
   
   const handleSubmit = () => {
-    if (!formData.name || !formData.description) return;
+    if (!formData.name || !formData.description || !formData.category) return;
     setSubmitted(true);
     setTimeout(() => {
       onSubmit(formData);
@@ -592,15 +598,16 @@ function AddProjectModal({ onClose, onSubmit }) {
             <div className="success-icon">
               <Check size={48} />
             </div>
-            <h2>Project Submitted!</h2>
-            <p>Your submission will be reviewed and added to the index.</p>
+            <h2>Submission Received!</h2>
+            <p>Thank you! Your project submission will be reviewed by an admin.</p>
+            <p className="submit-note">You'll be notified once it's approved and added to the index.</p>
           </div>
         ) : (
           <>
             <div className="modal-header">
               <div>
-                <h2>Add New Project</h2>
-                <p className="modal-subtitle">Nominate software that deserves to survive the AI era</p>
+                <h2>Submit New Project</h2>
+                <p className="modal-subtitle">Nominate software that deserves to survive the AI era. All submissions are reviewed by admins.</p>
               </div>
             </div>
             
@@ -661,10 +668,51 @@ function AddProjectModal({ onClose, onSubmit }) {
                   <label>GitHub URL</label>
                   <input
                     type="url"
-                    value={formData.github}
-                    onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))}
+                    value={formData.githubUrl}
+                    onChange={(e) => setFormData(prev => ({ ...prev, githubUrl: e.target.value }))}
                     placeholder="https://github.com/org/repo"
                   />
+                </div>
+                
+                <div className="form-group">
+                  <label>License</label>
+                  <input
+                    type="text"
+                    value={formData.license}
+                    onChange={(e) => setFormData(prev => ({ ...prev, license: e.target.value }))}
+                    placeholder="e.g., MIT, Apache-2.0, GPL-3.0"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Tech Stack</label>
+                  <input
+                    type="text"
+                    value={formData.techStack}
+                    onChange={(e) => setFormData(prev => ({ ...prev, techStack: e.target.value }))}
+                    placeholder="e.g., Rust, PostgreSQL, React"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Alternative To</label>
+                  <input
+                    type="text"
+                    value={formData.alternativeTo}
+                    onChange={(e) => setFormData(prev => ({ ...prev, alternativeTo: e.target.value }))}
+                    placeholder="e.g., Redis, Memcached"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.selfHostable}
+                      onChange={(e) => setFormData(prev => ({ ...prev, selfHostable: e.target.checked }))}
+                    />
+                    {' '}Self-Hostable
+                  </label>
                 </div>
                 
                 <div className="form-group full-width">
@@ -676,6 +724,26 @@ function AddProjectModal({ onClose, onSubmit }) {
                     placeholder="e.g., database, reliable, fast"
                   />
                 </div>
+                
+                <div className="form-group">
+                  <label>Your Name (optional)</label>
+                  <input
+                    type="text"
+                    value={formData.submittedBy}
+                    onChange={(e) => setFormData(prev => ({ ...prev, submittedBy: e.target.value }))}
+                    placeholder="Your name"
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Your Email (optional)</label>
+                  <input
+                    type="email"
+                    value={formData.submitterEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, submitterEmail: e.target.value }))}
+                    placeholder="your@email.com"
+                  />
+                </div>
               </div>
             </div>
             
@@ -684,10 +752,10 @@ function AddProjectModal({ onClose, onSubmit }) {
               <button 
                 className="submit-btn" 
                 onClick={handleSubmit}
-                disabled={!formData.name || !formData.description}
+                disabled={!formData.name || !formData.description || !formData.category}
               >
                 <Plus size={18} />
-                Submit Project
+                Submit for Review
               </button>
             </div>
           </>
@@ -881,29 +949,14 @@ export default function SurvivalRatingPlatform() {
           </div>
         </div>
         <div className="header-actions">
-          {currentUser && (
-            <div className="user-info">
-              <span className="user-email">{currentUser.email}</span>
-              {isAdmin && <span className="admin-badge">ADMIN</span>}
-            </div>
-          )}
           <button className="header-btn secondary" onClick={() => setShowAbout(true)}>
             <BookOpen size={18} />
             About
           </button>
           <button className="header-btn primary" onClick={() => setShowAddModal(true)}>
             <Plus size={18} />
-            Add Project
+            Submit Project
           </button>
-          {currentUser ? (
-            <button className="header-btn secondary" onClick={handleLogout}>
-              Logout
-            </button>
-          ) : (
-            <button className="header-btn primary" onClick={() => setShowLoginModal(true)}>
-              Admin Login
-            </button>
-          )}
         </div>
       </header>
       
@@ -1087,34 +1140,29 @@ export default function SurvivalRatingPlatform() {
           onClose={() => setShowAddModal(false)}
           onSubmit={async (formData) => {
             try {
-              setLoading(true);
-
-              // Create project in backend
-              const newProject = await api.projects.create({
+              // Submit to approval queue
+              await api.submissions.submit({
                 name: formData.name,
                 type: formData.type,
-                category: formData.category || 'Uncategorized',
+                category: formData.category,
                 description: formData.description,
                 url: formData.url,
-                githubUrl: formData.github,
+                githubUrl: formData.githubUrl,
                 logo: formData.logo || '📦',
                 tags: formData.tags,
-                yearCreated: formData.yearCreated ? parseInt(formData.yearCreated) : null
+                license: formData.license,
+                techStack: formData.techStack,
+                selfHostable: formData.selfHostable,
+                alternativeTo: formData.alternativeTo,
+                submittedBy: formData.submittedBy,
+                submitterEmail: formData.submitterEmail
               });
 
-              // Automatically trigger AI evaluation
-              const evaluation = await api.aiJudge.evaluate(newProject.id);
-
-              // Refresh project list
-              await loadProjects();
-
-              alert(`✅ Project "${newProject.name}" added and evaluated!\n\nSurvival Score: ${evaluation.aiRating.survivalScore} (${evaluation.aiRating.tier}-Tier)\n\nReload the page to see AI reasoning.`);
+              // Modal will show success message automatically
               setShowAddModal(false);
             } catch (error) {
-              console.error('Failed to add project:', error);
-              alert(`❌ Failed to add project: ${error.message}`);
-            } finally {
-              setLoading(false);
+              console.error('Failed to submit project:', error);
+              alert(`❌ Failed to submit project: ${error.message}`);
             }
           }}
         />

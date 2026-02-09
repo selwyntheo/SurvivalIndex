@@ -267,11 +267,79 @@ export const authApi = {
   }
 };
 
+/**
+ * Submissions API
+ */
+export const submissionsApi = {
+  /**
+   * Submit a new project for review
+   */
+  async submit(submissionData) {
+    return await apiFetch('/submissions', {
+      method: 'POST',
+      body: JSON.stringify(submissionData),
+    });
+  },
+
+  /**
+   * Get all submissions (admin only)
+   */
+  async getAll(filters = {}) {
+    const params = new URLSearchParams(filters);
+    const query = params.toString() ? `?${params}` : '';
+    return await apiFetch(`/submissions${query}`);
+  },
+
+  /**
+   * Get single submission by ID (admin only)
+   */
+  async getById(id) {
+    return await apiFetch(`/submissions/${id}`);
+  },
+
+  /**
+   * Get pending submissions count (admin only)
+   */
+  async getPendingCount() {
+    return await apiFetch('/submissions/pending/count');
+  },
+
+  /**
+   * Approve a submission (admin only)
+   */
+  async approve(id, data = {}) {
+    return await apiFetch(`/submissions/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Reject a submission (admin only)
+   */
+  async reject(id, data) {
+    return await apiFetch(`/submissions/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete a submission (admin only)
+   */
+  async delete(id) {
+    return await apiFetch(`/submissions/${id}`, {
+      method: 'DELETE',
+    });
+  }
+};
+
 export default {
   projects: projectsApi,
   aiJudge: aiJudgeApi,
   ratings: ratingsApi,
   auth: authApi,
+  submissions: submissionsApi,
   calculateSurvivalScore,
   getSurvivalTier,
 };

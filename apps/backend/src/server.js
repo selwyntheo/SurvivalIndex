@@ -5,6 +5,7 @@ import projectRoutes from './routes/projects.js';
 import ratingRoutes from './routes/ratings.js';
 import aiJudgeRoutes from './routes/ai-judge.js';
 import authRoutes from './routes/auth.js';
+import submissionRoutes from './routes/submissions.js';
 
 dotenv.config();
 
@@ -56,6 +57,15 @@ app.get('/', (req, res) => {
         submit: 'POST /api/ratings',
         getByProject: 'GET /api/ratings/:projectId',
         getAverage: 'GET /api/ratings/:projectId/average'
+      },
+      submissions: {
+        submit: 'POST /api/submissions (body: project details)',
+        list: 'GET /api/submissions [ADMIN ONLY]',
+        get: 'GET /api/submissions/:id [ADMIN ONLY]',
+        pendingCount: 'GET /api/submissions/pending/count [ADMIN ONLY]',
+        approve: 'POST /api/submissions/:id/approve [ADMIN ONLY]',
+        reject: 'POST /api/submissions/:id/reject (body: {rejectionReason}) [ADMIN ONLY]',
+        delete: 'DELETE /api/submissions/:id [ADMIN ONLY]'
       }
     },
     examples: {
@@ -72,6 +82,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/ratings', ratingRoutes);
 app.use('/api/ai-judge', aiJudgeRoutes);
+app.use('/api/submissions', submissionRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

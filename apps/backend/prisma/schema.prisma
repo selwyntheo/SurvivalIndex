@@ -132,3 +132,44 @@ model Session {
   @@index([token])
   @@index([userId])
 }
+
+model ProjectSubmission {
+  id            Int       @id @default(autoincrement())
+  
+  // Project details
+  name          String
+  type          String    // 'open-source' | 'saas' | 'hybrid'
+  category      String
+  description   String
+  url           String?
+  githubUrl     String?
+  logo          String?   // emoji or image url
+  tags          String?   // comma-separated tags
+  yearCreated   Int?
+  
+  // Enhanced fields
+  selfHostable  Boolean   @default(false)
+  license       String?
+  techStack     String?
+  alternativeTo String?
+  
+  // Submission metadata
+  status        String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  submittedBy   String?   // Email or name of submitter
+  submitterEmail String?
+  
+  // Admin review
+  reviewedBy    Int?
+  reviewedAt    DateTime?
+  reviewNotes   String?
+  rejectionReason String?
+  
+  // If approved, link to created project
+  projectId     Int?      @unique
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
