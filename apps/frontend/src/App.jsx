@@ -1,263 +1,127 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Star, TrendingUp, Users, Cpu, Brain, Eye, Zap, Heart, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ExternalLink, Github, Globe, BookOpen, Award, Filter, ArrowUpDown, Info, X, Check, Sparkles, Loader2, Bot } from 'lucide-react';
+import { Search, Star, TrendingUp, Users, Cpu, Brain, Eye, Zap, Heart, Plus, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ExternalLink, Github, Globe, BookOpen, Award, Filter, ArrowUpDown, Info, X, Check, Sparkles, Loader2, Bot, Target, BarChart3, DollarSign, Activity, Layers } from 'lucide-react';
 import api from './api/client';
+import { calculateSurvivalScore, getSurvivalTier, mapOldRatingsToSfi, getAASColor } from './api/client';
+import Leaderboard from './components/Leaderboard';
 
-// Sample data for demonstration
+// AAS sample data for demonstration (fallback when backend unavailable)
 const sampleProjects = [
   {
-    id: 1,
-    name: 'PostgreSQL',
-    type: 'open-source',
-    category: 'Database',
+    id: 1, name: 'PostgreSQL', type: 'open-source', category: 'Database',
     description: 'The world\'s most advanced open source relational database',
-    url: 'https://postgresql.org',
-    github: 'https://github.com/postgres/postgres',
+    url: 'https://postgresql.org', github: 'https://github.com/postgres/postgres',
     logo: '🐘',
-    ratings: {
-      insightCompression: 9.2,
-      substrateEfficiency: 9.5,
-      broadUtility: 9.8,
-      awareness: 9.7,
-      agentFriction: 7.8,
-      humanCoefficient: 8.5
-    },
-    totalVotes: 2847,
-    survivalScore: 9.1,
-    tags: ['sql', 'acid', 'enterprise', 'battle-tested'],
-    yearCreated: 1996
+    aas: 85, aasData: { unpromptedPickRate: 0.82, contextBreadth: 4, crossModelConsistency: 0.95, expertPreference: 88, hiddenGemGap: 3, hiddenGemClass: 'aligned' },
+    totalVotes: 2847, survivalScore: 85,
+    tags: ['sql', 'acid', 'enterprise', 'battle-tested'], yearCreated: 1996
   },
   {
-    id: 2,
-    name: 'Git',
-    type: 'open-source',
-    category: 'Version Control',
+    id: 2, name: 'Git', type: 'open-source', category: 'Version Control',
     description: 'Distributed version control system designed for speed and efficiency',
-    url: 'https://git-scm.com',
-    github: 'https://github.com/git/git',
+    url: 'https://git-scm.com', github: 'https://github.com/git/git',
     logo: '📦',
-    ratings: {
-      insightCompression: 10.0,
-      substrateEfficiency: 9.8,
-      broadUtility: 10.0,
-      awareness: 10.0,
-      agentFriction: 8.5,
-      humanCoefficient: 7.5
-    },
-    totalVotes: 5621,
-    survivalScore: 9.6,
-    tags: ['vcs', 'distributed', 'ubiquitous', 'essential'],
-    yearCreated: 2005
+    aas: 92, aasData: { unpromptedPickRate: 0.95, contextBreadth: 4, crossModelConsistency: 1.0, expertPreference: 95, hiddenGemGap: 3, hiddenGemClass: 'aligned' },
+    totalVotes: 5621, survivalScore: 92,
+    tags: ['vcs', 'distributed', 'ubiquitous', 'essential'], yearCreated: 2005
   },
   {
-    id: 3,
-    name: 'Redis',
-    type: 'open-source',
-    category: 'Cache/Database',
+    id: 3, name: 'Redis', type: 'open-source', category: 'Cache/Database',
     description: 'In-memory data structure store, used as database, cache, and message broker',
-    url: 'https://redis.io',
-    github: 'https://github.com/redis/redis',
+    url: 'https://redis.io', github: 'https://github.com/redis/redis',
     logo: '⚡',
-    ratings: {
-      insightCompression: 8.9,
-      substrateEfficiency: 9.7,
-      broadUtility: 9.2,
-      awareness: 9.4,
-      agentFriction: 8.8,
-      humanCoefficient: 7.8
-    },
-    totalVotes: 3102,
-    survivalScore: 9.0,
-    tags: ['cache', 'fast', 'versatile', 'simple'],
-    yearCreated: 2009
+    aas: 72, aasData: { unpromptedPickRate: 0.68, contextBreadth: 3, crossModelConsistency: 0.75, expertPreference: 78, hiddenGemGap: 6, hiddenGemClass: 'aligned' },
+    totalVotes: 3102, survivalScore: 72,
+    tags: ['cache', 'fast', 'versatile', 'simple'], yearCreated: 2009
   },
   {
-    id: 4,
-    name: 'Stripe',
-    type: 'saas',
-    category: 'Payments',
+    id: 4, name: 'Stripe', type: 'saas', category: 'Payments',
     description: 'Payment processing platform for internet businesses',
     url: 'https://stripe.com',
     logo: '💳',
-    ratings: {
-      insightCompression: 8.5,
-      substrateEfficiency: 8.2,
-      broadUtility: 8.8,
-      awareness: 9.5,
-      agentFriction: 9.2,
-      humanCoefficient: 8.8
-    },
-    totalVotes: 4215,
-    survivalScore: 8.8,
-    tags: ['payments', 'api-first', 'developer-friendly', 'documentation'],
-    yearCreated: 2010
+    aas: 78, aasData: { unpromptedPickRate: 0.75, contextBreadth: 3, crossModelConsistency: 0.88, expertPreference: 82, hiddenGemGap: 4, hiddenGemClass: 'aligned' },
+    totalVotes: 4215, survivalScore: 78,
+    tags: ['payments', 'api-first', 'developer-friendly', 'documentation'], yearCreated: 2010
   },
   {
-    id: 5,
-    name: 'Nginx',
-    type: 'open-source',
-    category: 'Web Server',
+    id: 5, name: 'Nginx', type: 'open-source', category: 'Web Server',
     description: 'High-performance HTTP server and reverse proxy',
-    url: 'https://nginx.org',
-    github: 'https://github.com/nginx/nginx',
+    url: 'https://nginx.org', github: 'https://github.com/nginx/nginx',
     logo: '🌐',
-    ratings: {
-      insightCompression: 9.0,
-      substrateEfficiency: 9.6,
-      broadUtility: 9.4,
-      awareness: 9.3,
-      agentFriction: 7.5,
-      humanCoefficient: 7.2
-    },
-    totalVotes: 2956,
-    survivalScore: 8.9,
-    tags: ['web-server', 'reverse-proxy', 'performant', 'stable'],
-    yearCreated: 2004
+    aas: 68, aasData: { unpromptedPickRate: 0.62, contextBreadth: 3, crossModelConsistency: 0.75, expertPreference: 70, hiddenGemGap: 2, hiddenGemClass: 'aligned' },
+    totalVotes: 2956, survivalScore: 68,
+    tags: ['web-server', 'reverse-proxy', 'performant', 'stable'], yearCreated: 2004
   },
   {
-    id: 6,
-    name: 'SQLite',
-    type: 'open-source',
-    category: 'Database',
+    id: 6, name: 'SQLite', type: 'open-source', category: 'Database',
     description: 'Self-contained, serverless SQL database engine',
     url: 'https://sqlite.org',
     logo: '🗄️',
-    ratings: {
-      insightCompression: 9.5,
-      substrateEfficiency: 9.9,
-      broadUtility: 9.6,
-      awareness: 9.0,
-      agentFriction: 9.5,
-      humanCoefficient: 8.0
-    },
-    totalVotes: 3890,
-    survivalScore: 9.4,
-    tags: ['embedded', 'zero-config', 'reliable', 'everywhere'],
-    yearCreated: 2000
+    aas: 74, aasData: { unpromptedPickRate: 0.70, contextBreadth: 4, crossModelConsistency: 0.80, expertPreference: 85, hiddenGemGap: 11, hiddenGemClass: 'aligned' },
+    totalVotes: 3890, survivalScore: 74,
+    tags: ['embedded', 'zero-config', 'reliable', 'everywhere'], yearCreated: 2000
   }
 ];
 
-const leverInfo = {
-  insightCompression: {
-    name: 'Insight Compression',
-    icon: Brain,
-    color: '#8B5CF6',
-    description: 'How much crystallized knowledge and hard-won insights does this software encode? Git represents decades of version control wisdom compressed into elegant commands.',
-    question: 'Would recreating this from scratch require rediscovering significant insights?'
-  },
-  substrateEfficiency: {
-    name: 'Substrate Efficiency',
-    icon: Cpu,
+// AAS: 4 signal indicators
+const aasSignalInfo = {
+  pickRate: {
+    name: 'Pick Rate',
+    icon: Target,
     color: '#10B981',
-    description: 'Does this run efficiently on CPU/traditional compute rather than requiring expensive GPU/inference cycles? grep on CPU beats LLM pattern matching.',
-    question: 'Does this save compute resources vs. AI re-synthesis at runtime?'
+    description: 'How often AI agents select this tool unprompted when given a need-based problem to solve.',
   },
-  broadUtility: {
-    name: 'Broad Utility',
-    icon: Globe,
+  breadth: {
+    name: 'Breadth',
+    icon: Layers,
     color: '#3B82F6',
-    description: 'How widely applicable is this across different use cases and domains? More usage = more survival pressure to stay relevant.',
-    question: 'How many different problems and contexts does this solve?'
+    description: 'How many repository types (NextJS, FastAPI, React SPA, CLI) the tool is picked across. 0-4 scale.',
   },
-  awareness: {
-    name: 'Awareness/Publicity',
-    icon: Eye,
+  models: {
+    name: 'Models',
+    icon: Bot,
+    color: '#8B5CF6',
+    description: 'Cross-model consistency: fraction of AI models that "know" and select this tool.',
+  },
+  expertGap: {
+    name: 'Expert Gap',
+    icon: Sparkles,
     color: '#F59E0B',
-    description: 'Is this software well-known and discoverable? Agents need to find it to use it. Being good isn\'t enough - you must be known.',
-    question: 'How likely are AI agents and developers to discover this?'
+    description: 'Difference between expert preference and agent awareness. Positive = hidden gem, negative = overhyped.',
   },
-  agentFriction: {
-    name: 'Agent Friendliness',
-    icon: Zap,
-    color: '#EF4444',
-    description: 'How easy is it for AI agents to use this tool? Good docs, simple APIs, predictable behavior, and clear error messages reduce friction.',
-    question: 'Can an AI agent easily learn and use this without human intervention?'
-  },
-  humanCoefficient: {
-    name: 'Human Coefficient',
-    icon: Heart,
-    color: '#EC4899',
-    description: 'For domains where humans prefer human work, this matters. Some software will survive because people WANT it, not just because it\'s efficient.',
-    question: 'Do humans specifically prefer this over AI-generated alternatives?'
-  }
 };
 
-function calculateSurvivalScore(ratings) {
-  const weights = {
-    insightCompression: 0.20,
-    substrateEfficiency: 0.18,
-    broadUtility: 0.22,
-    awareness: 0.15,
-    agentFriction: 0.15,
-    humanCoefficient: 0.10
-  };
-  
-  let score = 0;
-  Object.keys(weights).forEach(key => {
-    score += (ratings[key] || 0) * weights[key];
-  });
-  return Math.round(score * 10) / 10;
+// AAS score color helper
+function getAASBg(score) {
+  const color = getAASColor(score);
+  if (score >= 80) return 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+  if (score >= 60) return 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)';
+  if (score >= 40) return 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)';
+  if (score >= 20) return 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)';
+  return 'linear-gradient(135deg, #71717a 0%, #52525b 100%)';
 }
 
-function getSurvivalTier(score) {
-  if (score >= 9.0) return { tier: 'S', label: 'Immortal', color: '#FFD700', bg: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' };
-  if (score >= 8.0) return { tier: 'A', label: 'Enduring', color: '#10B981', bg: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' };
-  if (score >= 7.0) return { tier: 'B', label: 'Resilient', color: '#3B82F6', bg: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' };
-  if (score >= 6.0) return { tier: 'C', label: 'Vulnerable', color: '#F59E0B', bg: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' };
-  if (score >= 5.0) return { tier: 'D', label: 'At Risk', color: '#EF4444', bg: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)' };
-  return { tier: 'F', label: 'Endangered', color: '#6B7280', bg: 'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)' };
-}
-
-function LeverSlider({ leverKey, value, onChange, disabled }) {
-  const lever = leverInfo[leverKey];
-  const Icon = lever.icon;
-  const [showTooltip, setShowTooltip] = useState(false);
-  
-  return (
-    <div className="lever-slider">
-      <div className="lever-header">
-        <div className="lever-title">
-          <Icon size={18} style={{ color: lever.color }} />
-          <span>{lever.name}</span>
-          <button 
-            className="info-btn"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-          >
-            <Info size={14} />
-            {showTooltip && (
-              <div className="lever-tooltip">
-                <p>{lever.description}</p>
-                <p className="tooltip-question">{lever.question}</p>
-              </div>
-            )}
-          </button>
-        </div>
-        <span className="lever-value" style={{ color: lever.color }}>{value.toFixed(1)}</span>
-      </div>
-      <div className="slider-container">
-        <input
-          type="range"
-          min="1"
-          max="10"
-          step="0.1"
-          value={value}
-          onChange={(e) => onChange(parseFloat(e.target.value))}
-          disabled={disabled}
-          className="lever-range"
-          style={{ '--lever-color': lever.color, '--value-percent': `${(value - 1) / 9 * 100}%` }}
-        />
-        <div className="slider-labels">
-          <span>1</span>
-          <span>5</span>
-          <span>10</span>
-        </div>
-      </div>
-    </div>
-  );
+function getAASLabel(score) {
+  if (score >= 80) return 'High';
+  if (score >= 60) return 'Good';
+  if (score >= 40) return 'Moderate';
+  if (score >= 20) return 'Low';
+  return 'Minimal';
 }
 
 function ProjectCard({ project, onRate, expanded, onToggle, onEvaluate, isEvaluating }) {
-  const tier = getSurvivalTier(project.survivalScore);
+  const aasScore = project.aas || 0;
+  const aasColor = getAASColor(aasScore);
+  const aasData = project.aasData || {};
+  const isGem = aasData.hiddenGemClass === 'strong_hidden_gem' || aasData.hiddenGemClass === 'mild_hidden_gem';
+  const isOverhyped = aasData.hiddenGemClass === 'overhyped' || aasData.hiddenGemClass === 'mildly_overhyped';
+
+  // Build signal bars for expanded view
+  const signals = [
+    { key: 'pickRate', value: (aasData.unpromptedPickRate || 0) * 100, max: 100, label: '%' },
+    { key: 'breadth', value: aasData.contextBreadth || 0, max: 4, label: '/4' },
+    { key: 'models', value: (aasData.crossModelConsistency || 0) * 100, max: 100, label: '%' },
+    { key: 'expertGap', value: aasData.hiddenGemGap || 0, max: 100, label: '' },
+  ];
 
   return (
     <div className={`project-card ${expanded ? 'expanded' : ''}`}>
@@ -268,10 +132,15 @@ function ProjectCard({ project, onRate, expanded, onToggle, onEvaluate, isEvalua
             <div className="project-name-row">
               <h3>{project.name}</h3>
               <span className={`project-type ${project.type}`}>{project.type}</span>
-              {project.aiRating && (
-                <span className="ai-badge" title="AI Evaluated by Claude Sonnet 4.5">
-                  <Bot size={14} />
-                  AI Rated
+              {isGem && (
+                <span className="gem-badge" title="Hidden Gem: Expert preference exceeds agent awareness">
+                  <Sparkles size={14} />
+                  Hidden Gem
+                </span>
+              )}
+              {isOverhyped && (
+                <span className="overhyped-badge-inline" title="Overhyped: Agent awareness exceeds expert preference">
+                  Overhyped
                 </span>
               )}
             </div>
@@ -284,17 +153,13 @@ function ProjectCard({ project, onRate, expanded, onToggle, onEvaluate, isEvalua
           </div>
         </div>
         <div className="card-right">
-          <div className="survival-badge" style={{ background: tier.bg }}>
-            <span className="tier-letter">{tier.tier}</span>
-            <span className="tier-label">{tier.label}</span>
+          <div className="aas-score-badge" style={{ background: getAASBg(aasScore) }}>
+            <span className="aas-score-number">{aasScore}</span>
+            <span className="aas-score-label">AAS</span>
           </div>
           <div className="survival-score">
-            <span className="score-value">{project.survivalScore}</span>
-            <span className="score-label">Survival Score</span>
-          </div>
-          <div className="vote-count">
-            <Users size={14} />
-            <span>{project.totalVotes.toLocaleString()} ratings</span>
+            <span className="score-value" style={{ color: aasColor }}>{aasScore}</span>
+            <span className="score-label">/ 100</span>
           </div>
           <button className="expand-btn">
             {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -305,128 +170,53 @@ function ProjectCard({ project, onRate, expanded, onToggle, onEvaluate, isEvalua
       {expanded && (
         <div className="card-expanded">
           <div className="ratings-breakdown">
-            <h4>Survival Breakdown {project.aiRating && <span style={{ fontSize: '0.9em', opacity: 0.7 }}>(AI Evaluated)</span>}</h4>
-            {project.ratings ? (
-              <>
-                <div className="lever-bars">
-                  {Object.keys(leverInfo).map(key => {
-                    const lever = leverInfo[key];
-                    const Icon = lever.icon;
-                    const value = project.ratings[key];
-                    return (
-                      <div key={key} className="lever-bar-row">
-                        <div className="lever-bar-label">
-                          <Icon size={16} style={{ color: lever.color }} />
-                          <span>{lever.name}</span>
-                        </div>
-                        <div className="lever-bar-container">
-                          <div
-                            className="lever-bar-fill"
-                            style={{
-                              width: `${value * 10}%`,
-                              backgroundColor: lever.color
-                            }}
-                          />
-                        </div>
-                        <span className="lever-bar-value">{value.toFixed(1)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                {project.aiRating?.reasoning && (
-                  <div className="ai-reasoning">
-                    <h5>
-                      <Bot size={16} />
-                      AI Analysis by Claude Sonnet 4.5
-                    </h5>
-                    {project.aiRating.reasoning.overall && (
-                      <div className="reasoning-overall">
-                        <p>{project.aiRating.reasoning.overall}</p>
-                      </div>
-                    )}
-                    <details className="reasoning-details">
-                      <summary>View detailed reasoning for each lever</summary>
-                      <div className="reasoning-levers">
-                        {Object.keys(leverInfo).map(key => {
-                          const lever = leverInfo[key];
-                          const Icon = lever.icon;
-                          const reasoning = project.aiRating.reasoning[key];
-                          if (!reasoning) return null;
-                          return (
-                            <div key={key} className="reasoning-item">
-                              <div className="reasoning-lever">
-                                <Icon size={14} style={{ color: lever.color }} />
-                                <strong>{lever.name}</strong>
-                              </div>
-                              <p>{reasoning}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </details>
-
-                    {project.aiRating.suggestions && (
-                      <div className="ai-suggestions">
-                        <h6>
-                          <TrendingUp size={16} />
-                          AI Recommendations to Improve Survival Score
-                        </h6>
-
-                        {project.aiRating.suggestions.topPriorities && project.aiRating.suggestions.topPriorities.length > 0 && (
-                          <div className="suggestion-section">
-                            <div className="suggestion-header priority">
-                              <Award size={14} />
-                              <strong>Top Priorities</strong>
-                            </div>
-                            <ul className="suggestion-list">
-                              {project.aiRating.suggestions.topPriorities.map((suggestion, idx) => (
-                                <li key={idx}>{suggestion}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {project.aiRating.suggestions.quickWins && project.aiRating.suggestions.quickWins.length > 0 && (
-                          <div className="suggestion-section">
-                            <div className="suggestion-header quick">
-                              <Zap size={14} />
-                              <strong>Quick Wins</strong>
-                            </div>
-                            <ul className="suggestion-list">
-                              {project.aiRating.suggestions.quickWins.map((suggestion, idx) => (
-                                <li key={idx}>{suggestion}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {project.aiRating.suggestions.longTerm && project.aiRating.suggestions.longTerm.length > 0 && (
-                          <div className="suggestion-section">
-                            <div className="suggestion-header longterm">
-                              <Brain size={14} />
-                              <strong>Long-Term Strategy</strong>
-                            </div>
-                            <ul className="suggestion-list">
-                              {project.aiRating.suggestions.longTerm.map((suggestion, idx) => (
-                                <li key={idx}>{suggestion}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="ai-metadata">
-                      <span>Confidence: {Math.round((project.aiRating.confidence || 0) * 100)}%</span>
-                      <span>Evaluated: {new Date(project.aiRating.analyzedAt).toLocaleDateString()}</span>
+            <h4>AAS Awareness Breakdown</h4>
+            <div className="lever-bars">
+              {signals.map(({ key, value, max, label }) => {
+                const signal = aasSignalInfo[key];
+                const Icon = signal.icon;
+                const fillPercent = key === 'expertGap'
+                  ? Math.min(Math.abs(value), 100)
+                  : key === 'breadth'
+                    ? (value / max) * 100
+                    : value;
+                return (
+                  <div key={key} className="lever-bar-row">
+                    <div className="lever-bar-label">
+                      <Icon size={16} style={{ color: signal.color }} />
+                      <span>{signal.name}</span>
                     </div>
+                    <div className="lever-bar-container">
+                      <div
+                        className="lever-bar-fill"
+                        style={{
+                          width: `${Math.min(fillPercent, 100)}%`,
+                          backgroundColor: signal.color
+                        }}
+                      />
+                    </div>
+                    <span className="lever-bar-value">
+                      {key === 'breadth' ? `${value}${label}` :
+                       key === 'expertGap' ? `${value > 0 ? '+' : ''}${Math.round(value)}` :
+                       `${Math.round(value)}${label}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {project.aiRating?.reasoning && (
+              <div className="ai-reasoning">
+                <h5>
+                  <Bot size={16} />
+                  AI Analysis
+                </h5>
+                {project.aiRating.reasoning.overall && (
+                  <div className="reasoning-overall">
+                    <p>{project.aiRating.reasoning.overall}</p>
                   </div>
                 )}
-              </>
-            ) : (
-              <p style={{ opacity: 0.6, padding: '1rem', textAlign: 'center' }}>
-                No ratings yet. Click "Evaluate with AI" to get AI-powered survival analysis.
-              </p>
+              </div>
             )}
           </div>
 
@@ -446,32 +236,12 @@ function ProjectCard({ project, onRate, expanded, onToggle, onEvaluate, isEvalua
               )}
             </div>
             <div className="card-actions-right">
-              <button
-                className="ai-evaluate-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEvaluate(project.id);
-                }}
-                disabled={isEvaluating}
-              >
-                {isEvaluating ? (
-                  <>
-                    <Loader2 size={16} className="spinning" />
-                    Evaluating...
-                  </>
-                ) : (
-                  <>
-                    <Bot size={16} />
-                    {project.aiRating ? 'Re-evaluate with AI' : 'Evaluate with AI'}
-                  </>
-                )}
-              </button>
               <button className="rate-btn" onClick={(e) => {
                 e.stopPropagation();
                 onRate(project);
               }}>
                 <Star size={16} />
-                Rate This Project
+                Expert Eval
               </button>
             </div>
           </div>
@@ -482,40 +252,47 @@ function ProjectCard({ project, onRate, expanded, onToggle, onEvaluate, isEvalua
 }
 
 function RatingModal({ project, onClose, onSubmit }) {
-  const [ratings, setRatings] = useState({
-    insightCompression: 5,
-    substrateEfficiency: 5,
-    broadUtility: 5,
-    awareness: 5,
-    agentFriction: 5,
-    humanCoefficient: 5
-  });
+  const [wouldYouUse, setWouldYouUse] = useState('');
+  const [contextNotes, setContextNotes] = useState('');
+  const [appropriateness, setAppropriateness] = useState(3);
+  const [productionReadiness, setProductionReadiness] = useState(3);
+  const [longTermViability, setLongTermViability] = useState(3);
   const [submitted, setSubmitted] = useState(false);
-  
-  const previewScore = calculateSurvivalScore(ratings);
-  const previewTier = getSurvivalTier(previewScore);
-  
-  const handleSubmit = () => {
+
+  const handleSubmit = async () => {
+    if (!wouldYouUse) return;
     setSubmitted(true);
-    setTimeout(() => {
-      onSubmit(ratings);
-    }, 1500);
+    try {
+      await api.aas.submitExpertEvaluation({
+        toolId: project.id,
+        categoryId: project.category?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+        evaluatorId: 'anonymous',
+        wouldYouUse,
+        contextNotes,
+        appropriateness,
+        productionReadiness,
+        longTermViability,
+      });
+    } catch (err) {
+      console.error('Failed to submit evaluation:', err);
+    }
+    setTimeout(() => onClose(), 1500);
   };
-  
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>
           <X size={24} />
         </button>
-        
+
         {submitted ? (
           <div className="submit-success">
             <div className="success-icon">
               <Check size={48} />
             </div>
-            <h2>Rating Submitted!</h2>
-            <p>Thank you for contributing to the survival index.</p>
+            <h2>Evaluation Submitted!</h2>
+            <p>Thank you for helping calibrate the Agent Awareness Score.</p>
           </div>
         ) : (
           <>
@@ -523,34 +300,80 @@ function RatingModal({ project, onClose, onSubmit }) {
               <div className="modal-project">
                 <span className="modal-logo">{project.logo}</span>
                 <div>
-                  <h2>Rate {project.name}</h2>
-                  <p className="modal-subtitle">Your rating helps AI agents discover battle-tested software</p>
+                  <h2>Expert Eval: {project.name}</h2>
+                  <p className="modal-subtitle">Your input helps identify hidden gems vs overhyped tools</p>
                 </div>
               </div>
-              <div className="preview-score" style={{ background: previewTier.bg }}>
-                <span className="preview-tier">{previewTier.tier}</span>
-                <span className="preview-value">{previewScore}</span>
+              <div className="preview-score" style={{ background: getAASBg(project.aas || 0) }}>
+                <span className="preview-tier">{project.aas || 0}</span>
+                <span className="preview-value">AAS</span>
               </div>
             </div>
-            
+
             <div className="modal-body">
-              <div className="levers-grid">
-                {Object.keys(leverInfo).map(key => (
-                  <LeverSlider
-                    key={key}
-                    leverKey={key}
-                    value={ratings[key]}
-                    onChange={(val) => setRatings(prev => ({ ...prev, [key]: val }))}
-                  />
-                ))}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#e4e4e7' }}>
+                  Would you use this tool in production?
+                </label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {['yes', 'no', 'depends'].map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => setWouldYouUse(opt)}
+                      style={{
+                        padding: '10px 24px', borderRadius: '8px', border: '1px solid',
+                        borderColor: wouldYouUse === opt ? '#8B5CF6' : 'rgba(255,255,255,0.1)',
+                        background: wouldYouUse === opt ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.03)',
+                        color: wouldYouUse === opt ? '#c4b5fd' : '#a1a1aa',
+                        cursor: 'pointer', fontSize: '14px', fontWeight: '500', textTransform: 'capitalize',
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#e4e4e7' }}>
+                  Context notes (optional)
+                </label>
+                <textarea
+                  value={contextNotes}
+                  onChange={e => setContextNotes(e.target.value)}
+                  placeholder="When would/wouldn't you use this tool?"
+                  style={{
+                    width: '100%', minHeight: '80px', padding: '12px', borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
+                    color: '#e4e4e7', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              {[
+                { label: 'Appropriateness (1-5)', value: appropriateness, setter: setAppropriateness },
+                { label: 'Production Readiness (1-5)', value: productionReadiness, setter: setProductionReadiness },
+                { label: 'Long-term Viability (1-5)', value: longTermViability, setter: setLongTermViability },
+              ].map(({ label, value, setter }) => (
+                <div key={label} style={{ marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '13px', color: '#a1a1aa' }}>{label}</label>
+                    <span style={{ fontSize: '13px', color: '#e4e4e7', fontFamily: 'JetBrains Mono, monospace' }}>{value}</span>
+                  </div>
+                  <input
+                    type="range" min="1" max="5" step="1" value={value}
+                    onChange={e => setter(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              ))}
             </div>
-            
+
             <div className="modal-footer">
               <button className="cancel-btn" onClick={onClose}>Cancel</button>
-              <button className="submit-btn" onClick={handleSubmit}>
+              <button className="submit-btn" onClick={handleSubmit} disabled={!wouldYouUse}>
                 <Sparkles size={18} />
-                Submit Rating
+                Submit Evaluation
               </button>
             </div>
           </>
@@ -776,6 +599,7 @@ export default function SurvivalRatingPlatform() {
   const [ratingProject, setRatingProject] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
   const [itemsPerPage] = useState(12);
@@ -820,30 +644,56 @@ export default function SurvivalRatingPlatform() {
       const paginationInfo = response.pagination;
 
       // Transform backend data to match frontend format
-      const transformedProjects = data.map(project => ({
-        id: project.id,
-        name: project.name,
-        type: project.type,
-        category: project.category,
-        description: project.description,
-        url: project.url,
-        github: project.githubUrl,
-        logo: project.logo || '📦',
-        tags: project.tags ? project.tags.split(',') : [],
-        yearCreated: project.yearCreated,
-        // AI ratings from backend
-        ratings: project.aiRating ? {
-          insightCompression: project.aiRating.insightCompression,
-          substrateEfficiency: project.aiRating.substrateEfficiency,
-          broadUtility: project.aiRating.broadUtility,
-          awareness: project.aiRating.awareness,
-          agentFriction: project.aiRating.agentFriction,
-          humanCoefficient: project.aiRating.humanCoefficient
-        } : null,
-        survivalScore: project.aiRating?.survivalScore || 0,
-        aiRating: project.aiRating, // Keep full AI rating for display
-        totalVotes: 0, // TODO: Calculate from userRatings
-      }));
+      const transformedProjects = data.map(project => {
+        // AAS score from backend (latest score)
+        const aasRecord = project.aasScores?.[0];
+
+        // Fallback: bootstrap AAS from aiRating.awareness if no AAS record
+        const aas = aasRecord
+          ? aasRecord.aas
+          : project.aiRating
+            ? Math.round(Math.min((project.aiRating.awareness || 5) * 10, 100))
+            : 0;
+
+        const aasData = aasRecord ? {
+          unpromptedPickRate: aasRecord.unpromptedPickRate,
+          ecosystemPickRate: aasRecord.ecosystemPickRate,
+          considerationRate: aasRecord.considerationRate,
+          contextBreadth: aasRecord.contextBreadth,
+          crossModelConsistency: aasRecord.crossModelConsistency,
+          expertPreference: aasRecord.expertPreference,
+          hiddenGemGap: aasRecord.hiddenGemGap,
+          hiddenGemClass: aasRecord.hiddenGemClass,
+          modelScores: aasRecord.modelScores,
+          confidence: aasRecord.confidence,
+        } : project.aiRating ? {
+          unpromptedPickRate: (project.aiRating.agentFriction || 5) / 10,
+          contextBreadth: Math.round(Math.min((project.aiRating.broadUtility || 5) / 2.5, 4)),
+          crossModelConsistency: 0.5,
+          expertPreference: null,
+          hiddenGemGap: null,
+          hiddenGemClass: null,
+          confidence: 0.2,
+        } : {};
+
+        return {
+          id: project.id,
+          name: project.name,
+          type: project.type,
+          category: project.category,
+          description: project.description,
+          url: project.url,
+          github: project.githubUrl,
+          logo: project.logo || '📦',
+          tags: project.tags ? project.tags.split(',') : [],
+          yearCreated: project.yearCreated,
+          aas,
+          aasData,
+          survivalScore: aas,
+          aiRating: project.aiRating,
+          totalVotes: 0,
+        };
+      });
 
       setProjects(transformedProjects);
       setPagination(paginationInfo);
@@ -868,24 +718,28 @@ export default function SurvivalRatingPlatform() {
       setEvaluating(prev => ({ ...prev, [projectId]: true }));
       const result = await api.aiJudge.evaluate(projectId);
 
-      // Update project with AI rating
+      // Update project with AI rating, bootstrap AAS from awareness lever
+      const aas = Math.round(Math.min((result.aiRating.awareness || 5) * 10, 100));
+
       setProjects(prev => prev.map(p =>
         p.id === projectId ? {
           ...p,
           aiRating: result.aiRating,
-          ratings: {
-            insightCompression: result.aiRating.insightCompression,
-            substrateEfficiency: result.aiRating.substrateEfficiency,
-            broadUtility: result.aiRating.broadUtility,
-            awareness: result.aiRating.awareness,
-            agentFriction: result.aiRating.agentFriction,
-            humanCoefficient: result.aiRating.humanCoefficient
+          aas,
+          aasData: {
+            unpromptedPickRate: (result.aiRating.agentFriction || 5) / 10,
+            contextBreadth: Math.round(Math.min((result.aiRating.broadUtility || 5) / 2.5, 4)),
+            crossModelConsistency: 0.5,
+            expertPreference: null,
+            hiddenGemGap: null,
+            hiddenGemClass: null,
+            confidence: 0.2,
           },
-          survivalScore: result.aiRating.survivalScore
+          survivalScore: aas,
         } : p
       ));
 
-      alert(`✅ AI evaluation complete! ${result.project.name} scored ${result.aiRating.survivalScore} (${result.aiRating.tier}-Tier)`);
+      alert(`AI evaluation complete! ${result.project.name} — AAS: ${aas}/100`);
     } catch (error) {
       console.error('AI evaluation failed:', error);
       alert(`❌ AI evaluation failed: ${error.message}`);
@@ -932,7 +786,7 @@ export default function SurvivalRatingPlatform() {
       return matchesSearch && matchesType;
     })
     .sort((a, b) => {
-      if (sortBy === 'score') return b.survivalScore - a.survivalScore;
+      if (sortBy === 'score') return (b.aas || 0) - (a.aas || 0);
       if (sortBy === 'votes') return b.totalVotes - a.totalVotes;
       if (sortBy === 'name') return a.name.localeCompare(b.name);
       return 0;
@@ -949,6 +803,10 @@ export default function SurvivalRatingPlatform() {
           </div>
         </div>
         <div className="header-actions">
+          <button className="header-btn secondary" onClick={() => setShowLeaderboard(true)}>
+            <BarChart3 size={18} />
+            Leaderboard
+          </button>
           <button className="header-btn secondary" onClick={() => setShowAbout(true)}>
             <BookOpen size={18} />
             About
@@ -960,6 +818,7 @@ export default function SurvivalRatingPlatform() {
         </div>
       </header>
       
+      <main>
       <section className="hero-section">
         <div className="hero-badge">
           <Sparkles size={14} />
@@ -969,27 +828,27 @@ export default function SurvivalRatingPlatform() {
           Software That Will <span>Survive</span> the AI Era
         </h1>
         <p className="hero-subtitle">
-          Crowdsourced ratings for open source and SaaS projects. Help AI agents discover 
-          battle-tested software that won't be re-invented. Rate projects across six survival levers.
+          Measuring which tools AI agents actually know and recommend.
+          Discover hidden gems that experts love but agents overlook. Scored using AAS 0-100.
         </p>
       </section>
       
       <div className="stats-bar">
         <div className="stat-item">
           <div className="stat-value">{projects.length}</div>
-          <div className="stat-label">Projects Indexed</div>
+          <div className="stat-label">Tools Tracked</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value">{projects.reduce((acc, p) => acc + p.totalVotes, 0).toLocaleString()}</div>
-          <div className="stat-label">Community Ratings</div>
+          <div className="stat-value">AAS</div>
+          <div className="stat-label">0-100 Scale</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value">6</div>
-          <div className="stat-label">Survival Levers</div>
+          <div className="stat-value">{projects.filter(p => p.aasData?.hiddenGemClass === 'strong_hidden_gem' || p.aasData?.hiddenGemClass === 'mild_hidden_gem').length}</div>
+          <div className="stat-label">Hidden Gems</div>
         </div>
         <div className="stat-item">
-          <div className="stat-value">{projects.filter(p => p.survivalScore >= 9).length}</div>
-          <div className="stat-label">S-Tier Projects</div>
+          <div className="stat-value">{projects.filter(p => p.aas >= 80).length}</div>
+          <div className="stat-label">High Awareness</div>
         </div>
       </div>
       
@@ -1029,7 +888,7 @@ export default function SurvivalRatingPlatform() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
-              <option value="score">Sort by Score</option>
+              <option value="score">Sort by AAS</option>
               <option value="votes">Sort by Votes</option>
               <option value="name">Sort by Name</option>
             </select>
@@ -1115,17 +974,22 @@ export default function SurvivalRatingPlatform() {
         )}
       </section>
       
+      </main>
+
       {ratingProject && (
         <RatingModal
           project={ratingProject}
           onClose={() => setRatingProject(null)}
           onSubmit={(ratings) => {
+            const newScore = calculateSurvivalScore(ratings);
             setProjects(prev => prev.map(p => {
               if (p.id === ratingProject.id) {
                 return {
                   ...p,
-                  totalVotes: p.totalVotes + 1,
-                  survivalScore: calculateSurvivalScore(ratings)
+                  totalVotes: (p.totalVotes || 0) + 1,
+                  sfiComponents: ratings,
+                  survivalScore: newScore,
+                  survivalTier: getSurvivalTier(newScore),
                 };
               }
               return p;
@@ -1133,6 +997,12 @@ export default function SurvivalRatingPlatform() {
             setRatingProject(null);
           }}
         />
+      )}
+
+      {showLeaderboard && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#0a0a0f', zIndex: 999, overflowY: 'auto' }}>
+          <Leaderboard onClose={() => setShowLeaderboard(false)} />
+        </div>
       )}
       
       {showAddModal && (
@@ -1229,11 +1099,6 @@ export default function SurvivalRatingPlatform() {
                   </button>
                 </div>
               </form>
-              <div className="login-hint">
-                <p><strong>Demo credentials:</strong></p>
-                <p>Email: admin@survivalindex.ai</p>
-                <p>Password: admin123</p>
-              </div>
             </div>
           </div>
         </div>
@@ -1248,52 +1113,90 @@ export default function SurvivalRatingPlatform() {
             <div className="about-content">
               <h3>What is SurvivalIndex.org?</h3>
               <p>
-                This platform helps identify which software will survive in an era where AI can generate code.
-                Using advanced AI analysis, we evaluate projects across six critical survival levers.
+                This platform measures which tools AI agents actually know about and recommend.
+                Using the Agent Awareness Score (AAS), we evaluate whether AI coding agents will
+                pick your tool unprompted when solving real problems.
               </p>
               <p>
-                The core insight: Not all software will be re-synthesized by AI. Software with high survival scores
-                represents crystallized knowledge that would be inefficient to recreate from scratch.
+                The core insight: A tool with great features but zero agent visibility is effectively dead
+                in the AI era. Awareness is the foundation — everything else builds on top.
               </p>
-              
-              <h3>The Six Survival Levers</h3>
+
+              <h3>AAS Methodology</h3>
+              <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '13px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                AAS = geometric_mean(per_model_pick_rates) * 100
+              </p>
+              <p>
+                Three prompt types per tool (none naming the tool directly): need-based (50% weight),
+                ecosystem-adjacent (30%), and consideration-inviting (20%). The geometric mean ensures
+                tools must be known across models, not just one.
+              </p>
+
+              <h3>AAS Signals</h3>
               <div className="lever-explainer">
-                {Object.entries(leverInfo).map(([key, lever]) => {
-                  const Icon = lever.icon;
+                {Object.entries(aasSignalInfo).map(([key, signal]) => {
+                  const Icon = signal.icon;
                   return (
                     <div key={key} className="lever-explain-item">
-                      <div className="lever-explain-icon" style={{ background: `${lever.color}20` }}>
-                        <Icon size={18} style={{ color: lever.color }} />
+                      <div className="lever-explain-icon" style={{ background: `${signal.color}20` }}>
+                        <Icon size={18} style={{ color: signal.color }} />
                       </div>
                       <div className="lever-explain-text">
-                        <h4>{lever.name}</h4>
-                        <p>{lever.description}</p>
+                        <h4>{signal.name}</h4>
+                        <p>{signal.description}</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
-              
-              <h3>For AI Agents</h3>
+
+              <h3>Hidden Gems</h3>
               <p>
-                This index is designed to be machine-readable. AI coding agents can query this database to discover 
-                battle-tested software rather than re-implementing solutions from scratch. High-scoring projects 
-                represent accumulated wisdom that saves compute, tokens, and energy.
+                The editorial insight: tools where expert preference far exceeds agent awareness.
+                A tool with 89% expert approval but only 34 AAS is a hidden gem — agents should know about it.
+                Conversely, tools agents love but experts wouldn't choose are "overhyped."
               </p>
-              
-              <h3>Survival Tiers</h3>
+
+              <h3>AAS Scale (0-100)</h3>
               <p>
-                <strong>S-Tier (9.0+):</strong> Immortal — Would be insane to re-synthesize<br />
-                <strong>A-Tier (8.0-8.9):</strong> Enduring — Extremely high survival probability<br />
-                <strong>B-Tier (7.0-7.9):</strong> Resilient — Strong survival characteristics<br />
-                <strong>C-Tier (6.0-6.9):</strong> Vulnerable — May need to adapt<br />
-                <strong>D-Tier (5.0-5.9):</strong> At Risk — Could be replaced by AI<br />
-                <strong>F-Tier (&lt;5.0):</strong> Endangered — Likely to be re-synthesized
+                <strong style={{ color: '#10B981' }}>High (80+):</strong> Agents know and pick this tool consistently<br />
+                <strong style={{ color: '#3B82F6' }}>Good (60-79):</strong> Well-known across most models<br />
+                <strong style={{ color: '#F59E0B' }}>Moderate (40-59):</strong> Known by some models, invisible to others<br />
+                <strong style={{ color: '#EF4444' }}>Low (20-39):</strong> Rarely picked by agents<br />
+                <strong style={{ color: '#71717a' }}>Minimal (&lt;20):</strong> Effectively invisible to AI agents
               </p>
             </div>
           </div>
         </div>
       )}
+
+      <footer className="platform-footer">
+        <div className="footer-content">
+          <div className="footer-brand">
+            <div className="footer-logo">S</div>
+            <div>
+              <strong>SurvivalIndex.org</strong>
+              <p>Rate &amp; discover software that will survive the AI era.</p>
+            </div>
+          </div>
+          <div className="footer-links">
+            <div className="footer-col">
+              <h4>Platform</h4>
+              <a href="/" aria-label="Browse the Survival Index">Browse Index</a>
+              <a href="https://github.com/selwyntheo/survivalindex" target="_blank" rel="noopener noreferrer" aria-label="View source code on GitHub">GitHub</a>
+            </div>
+            <div className="footer-col">
+              <h4>Resources</h4>
+              <a href="/llms.txt" aria-label="Machine-readable site description for AI agents">llms.txt</a>
+              <a href="/sitemap.xml" aria-label="XML Sitemap for search engines">Sitemap</a>
+              <a href="/humans.txt" aria-label="Credits and technology information">humans.txt</a>
+            </div>
+          </div>
+        </div>
+        <div className="footer-bottom">
+          <p>&copy; {new Date().getFullYear()} SurvivalIndex.org — Helping AI agents and developers discover battle-tested software.</p>
+        </div>
+      </footer>
     </div>
   );
 }

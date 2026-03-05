@@ -169,39 +169,93 @@ export const ratingsApi = {
 };
 
 /**
- * Helper to calculate survival score from ratings
+ * SFI-v3 default weights
  */
-export function calculateSurvivalScore(ratings) {
-  const weights = {
-    insightCompression: 0.20,
-    substrateEfficiency: 0.18,
-    broadUtility: 0.22,
-    awareness: 0.15,
-    agentFriction: 0.15,
-    humanCoefficient: 0.10,
-  };
+const SFI_WEIGHTS = { w_s: 1.0, w_u: 0.8, w_h: 0.6, w_a: 1.0, w_f: 1.0 };
 
-  return (
-    ratings.insightCompression * weights.insightCompression +
-    ratings.substrateEfficiency * weights.substrateEfficiency +
-    ratings.broadUtility * weights.broadUtility +
-    ratings.awareness * weights.awareness +
-    ratings.agentFriction * weights.agentFriction +
-    ratings.humanCoefficient * weights.humanCoefficient
-  );
+/**
+ * Clamp value between min and max
+ */
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
 }
 
 /**
- * Get survival tier from score
+ * SFI-v3: Calculate survival score (0-100) from 5 variables.
+ * Input: { savings, usage, human, awarenessCost, frictionCost } each 1-10
+ */
+export function calculateSurvivalScore(components) {
+  const s = clamp(components.savings || 5, 1, 10);
+  const u = clamp(components.usage || 5, 1, 10);
+  const h = clamp(components.human || 5, 1, 10);
+  const a = clamp(components.awarenessCost || 5, 1, 10);
+  const f = clamp(components.frictionCost || 5, 1, 10);
+
+  const logRatio =
+    SFI_WEIGHTS.w_s * Math.log(s) +
+    SFI_WEIGHTS.w_u * Math.log(u) +
+    SFI_WEIGHTS.w_h * Math.log(h) -
+    SFI_WEIGHTS.w_a * Math.log(a) -
+    SFI_WEIGHTS.w_f * Math.log(f);
+
+  return Math.round(clamp(50 + 15 * logRatio, 0, 100) * 10) / 10;
+}
+
+/**
+ * SFI-v3: Map old 7-lever ratings to 5 SFI variables.
+ * Used for bootstrap/fallback when only old-style ratings are available.
+ */
+export function mapOldRatingsToSfi(ratings) {
+  return {
+    savings: clamp(((ratings.insightCompression || 5) + (ratings.broadUtility || 5)) / 2, 1, 10),
+    usage: clamp(ratings.broadUtility || 5, 1, 10),
+    human: clamp(ratings.humanCoefficient || 5, 1, 10),
+    awarenessCost: clamp(11 - (ratings.awareness || 5), 1, 10),
+    frictionCost: clamp(11 - (ratings.agentFriction || 5), 1, 10),
+  };
+}
+
+/**
+ * SFI-v3: Get survival tier from score (0-100)
  */
 export function getSurvivalTier(score) {
-  if (score >= 9.0) return 'S';
-  if (score >= 8.0) return 'A';
-  if (score >= 7.0) return 'B';
-  if (score >= 6.0) return 'C';
-  if (score >= 5.0) return 'D';
-  return 'F';
+  if (score >= 82) return 'legendary';
+  if (score >= 65) return 'strong';
+  if (score >= 45) return 'competitive';
+  if (score >= 25) return 'pressured';
+  return 'endangered';
 }
+
+/**
+ * SFI API
+ */
+export const sfiApi = {
+  async getToolLeaderboard(category) {
+    return await apiFetch(`/sfi/leaderboard/tools?category=${encodeURIComponent(category)}`);
+  },
+  async getCategoryLeaderboard() {
+    return await apiFetch('/sfi/leaderboard/categories');
+  },
+  async getAgentLeaderboard() {
+    return await apiFetch('/sfi/leaderboard/agents');
+  },
+  async getToolDetail(toolName, category) {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return await apiFetch(`/sfi/tool/${encodeURIComponent(toolName)}${params}`);
+  },
+  async getTiers() {
+    return await apiFetch('/sfi/tiers');
+  },
+  async getCategories() {
+    return await apiFetch('/sfi/categories');
+  },
+  async getVersion() {
+    return await apiFetch('/sfi/version');
+  },
+  async triggerComputation() {
+    return await apiFetch('/sfi/compute', { method: 'POST' });
+  },
+};
 
 /**
  * Auth API
@@ -334,12 +388,128 @@ export const submissionsApi = {
   }
 };
 
+/**
+ * ACES API
+ */
+export const acesApi = {
+  /**
+   * Submit an agent choice observation
+   */
+  async submitObservation(data) {
+    return await apiFetch('/aces/observations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Get ACES metrics for a project
+   */
+  async getMetrics(projectId) {
+    return await apiFetch(`/aces/metrics/${projectId}`);
+  },
+
+  /**
+   * Get all project ACES metrics
+   */
+  async getAllMetrics() {
+    return await apiFetch('/aces/metrics');
+  },
+
+  /**
+   * Trigger aggregation for a project (admin)
+   */
+  async aggregate(projectId) {
+    return await apiFetch(`/aces/aggregate/${projectId}`, {
+      method: 'POST',
+    });
+  },
+
+  /**
+   * Trigger aggregation for all projects (admin)
+   */
+  async aggregateAll() {
+    return await apiFetch('/aces/aggregate', {
+      method: 'POST',
+    });
+  },
+};
+
+/**
+ * AAS (Agent Awareness Score) API
+ */
+export const aasApi = {
+  async getLeaderboard() {
+    return await apiFetch('/aas/leaderboard');
+  },
+  async getCategoryLeaderboard(category) {
+    return await apiFetch(`/aas/leaderboard/${encodeURIComponent(category)}`);
+  },
+  async getToolDetail(toolName, category) {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return await apiFetch(`/aas/tool/${encodeURIComponent(toolName)}${params}`);
+  },
+  async getToolModels(toolName, category) {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return await apiFetch(`/aas/tool/${encodeURIComponent(toolName)}/models${params}`);
+  },
+  async getHiddenGems(category) {
+    if (category) return await apiFetch(`/aas/hidden-gems/${encodeURIComponent(category)}`);
+    return await apiFetch('/aas/hidden-gems');
+  },
+  async getCategories() {
+    return await apiFetch('/aas/categories');
+  },
+  async getVersion() {
+    return await apiFetch('/aas/version');
+  },
+  async triggerComputation() {
+    return await apiFetch('/aas/compute', { method: 'POST' });
+  },
+  async submitExecution(data) {
+    return await apiFetch('/aas/executions', { method: 'POST', body: JSON.stringify(data) });
+  },
+  async submitExpertEvaluation(data) {
+    return await apiFetch('/aas/expert-evaluations', { method: 'POST', body: JSON.stringify(data) });
+  },
+};
+
+/**
+ * AAS: Classify hidden gem from gap
+ */
+export function classifyHiddenGem(aas, expertPref) {
+  if (expertPref === null || expertPref === undefined) return null;
+  const gap = expertPref - aas;
+  if (gap > 30) return 'strong_hidden_gem';
+  if (gap > 15) return 'mild_hidden_gem';
+  if (gap > -15) return 'aligned';
+  if (gap > -30) return 'mildly_overhyped';
+  return 'overhyped';
+}
+
+/**
+ * AAS: Get color for score
+ */
+export function getAASColor(score) {
+  if (score >= 80) return '#10B981'; // green
+  if (score >= 60) return '#3B82F6'; // blue
+  if (score >= 40) return '#F59E0B'; // amber
+  if (score >= 20) return '#EF4444'; // red
+  return '#71717a'; // gray
+}
+
 export default {
   projects: projectsApi,
   aiJudge: aiJudgeApi,
   ratings: ratingsApi,
   auth: authApi,
   submissions: submissionsApi,
+  aces: acesApi,
+  sfi: sfiApi,
+  aas: aasApi,
   calculateSurvivalScore,
   getSurvivalTier,
+  mapOldRatingsToSfi,
+  classifyHiddenGem,
+  getAASColor,
 };
