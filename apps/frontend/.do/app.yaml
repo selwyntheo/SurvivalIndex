@@ -1,0 +1,40 @@
+#
+# DigitalOcean App Platform - Frontend Static Site Only
+# Deploy: doctl apps create --spec .do/app.yaml
+# Update: doctl apps update <APP_ID> --spec .do/app.yaml
+#
+
+name: survivalindex-frontend
+region: nyc
+
+static_sites:
+  - name: web
+    github:
+      repo: selwyntheo/survivalindex-frontend
+      branch: main
+      deploy_on_push: true
+
+    # Frontend is at root of this repo
+    source_dir: /
+
+    build_command: npm install && npm run build
+    output_dir: dist
+
+    envs:
+      - key: VITE_API_URL
+        scope: BUILD_TIME
+        value: "https://survivalindex-api-tthti.ondigitalocean.app/api"
+
+    routes:
+      - path: /
+
+    catchall_document: index.html
+
+# Custom domain
+domains:
+  - domain: survivalindex.org
+    type: PRIMARY
+    zone: survivalindex.org
+  - domain: www.survivalindex.org
+    type: ALIAS
+    zone: survivalindex.org
