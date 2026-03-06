@@ -602,7 +602,7 @@ export default function SurvivalRatingPlatform() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
-  const [itemsPerPage] = useState(12);
+  const [itemsPerPage] = useState(100);
 
   // Auth state
   const [currentUser, setCurrentUser] = useState(null);
@@ -835,7 +835,7 @@ export default function SurvivalRatingPlatform() {
       
       <div className="stats-bar">
         <div className="stat-item">
-          <div className="stat-value">{projects.length}</div>
+          <div className="stat-value">{pagination?.total || projects.length}</div>
           <div className="stat-label">Tools Tracked</div>
         </div>
         <div className="stat-item">
