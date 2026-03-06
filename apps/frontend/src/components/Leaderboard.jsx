@@ -299,10 +299,160 @@ function ToolTable({ tools, category, onSelectTool }) {
 
 // ─── Model Table ─────────────────────────────────────────────────────
 
-function ModelTable() {
+function ModelTable({ categories, onSelectTool }) {
+  const [modelData, setModelData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadAllTools() {
+      try {
+        // Load tools from each category to get modelScores
+        const allTools = [];
+        for (const cat of categories) {
+          try {
+            const res = await api.aas.getCategoryLeaderboard(cat.categoryId);
+            for (const tool of (res.tools || [])) {
+              allTools.push({ ...tool, category: cat.categoryId });
+            }
+          } catch {}
+        }
+
+        // Extract unique model names and build comparison
+        const modelMap = {}; // { modelId: { tools: { toolName: pickRate }, totalPicks, totalTrials } }
+        for (const tool of allTools) {
+          if (!tool.modelScores || !Array.isArray(tool.modelScores)) continue;
+          for (const ms of tool.modelScores) {
+            if (!modelMap[ms.modelId]) {
+              modelMap[ms.modelId] = { toolsKnown: 0, totalTools: 0, avgPickRate: 0, pickRates: [] };
+            }
+            modelMap[ms.modelId].totalTools++;
+            if (ms.knowsTool) modelMap[ms.modelId].toolsKnown++;
+            modelMap[ms.modelId].pickRates.push(ms.pickRate);
+          }
+        }
+
+        // Calculate averages
+        const models = Object.entries(modelMap).map(([modelId, data]) => ({
+          modelId,
+          toolsKnown: data.toolsKnown,
+          totalTools: data.totalTools,
+          knowledgeRate: data.totalTools > 0 ? data.toolsKnown / data.totalTools : 0,
+          avgPickRate: data.pickRates.length > 0
+            ? data.pickRates.reduce((s, r) => s + r, 0) / data.pickRates.length
+            : 0,
+        })).sort((a, b) => b.knowledgeRate - a.knowledgeRate);
+
+        // Build per-tool comparison matrix
+        const modelIds = models.map(m => m.modelId);
+        const toolRows = allTools
+          .filter(t => t.modelScores && t.modelScores.length > 0)
+          .map(t => ({
+            toolName: t.toolName,
+            logo: t.logo,
+            category: t.category,
+            aas: t.aas,
+            scores: modelIds.map(mId => {
+              const ms = t.modelScores.find(s => s.modelId === mId);
+              return ms ? ms.pickRate : null;
+            }),
+          }))
+          .sort((a, b) => b.aas - a.aas);
+
+        setModelData({ models, modelIds, toolRows });
+      } catch (err) {
+        console.error('Failed to load model data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (categories.length > 0) loadAllTools();
+    else setLoading(false);
+  }, [categories]);
+
+  if (loading) {
+    return (
+      <div className="loading-state" style={{ padding: '60px' }}>
+        <Loader2 size={32} className="spinning" />
+        <p>Loading model comparison...</p>
+      </div>
+    );
+  }
+
+  if (!modelData || modelData.models.length === 0) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', color: '#71717a' }}>
+        No per-model data yet. Run the AAS computation with multiple models to populate this view.
+      </div>
+    );
+  }
+
+  const { models, modelIds, toolRows } = modelData;
+
   return (
-    <div style={{ padding: '40px', textAlign: 'center', color: '#71717a' }}>
-      Model leaderboard coming soon. Submit agent executions via the API to populate this view.
+    <div>
+      {/* Model summary cards */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        {models.map(m => (
+          <div key={m.modelId} style={{
+            flex: '1 1 200px',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '12px',
+            padding: '16px',
+          }}>
+            <div style={{ fontSize: '13px', color: '#a1a1aa', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Bot size={14} />
+              {m.modelId}
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: getAASColor(Math.round(m.knowledgeRate * 100)), fontFamily: 'JetBrains Mono, monospace' }}>
+              {Math.round(m.knowledgeRate * 100)}%
+            </div>
+            <div style={{ fontSize: '12px', color: '#71717a' }}>
+              knows {m.toolsKnown}/{m.totalTools} tools
+            </div>
+            <div style={{ fontSize: '12px', color: '#71717a', marginTop: '4px' }}>
+              avg pick rate: {Math.round(m.avgPickRate * 100)}%
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-tool comparison matrix */}
+      <div className="tool-table-wrapper">
+        <table className="tool-table">
+          <thead>
+            <tr>
+              <th>TOOL</th>
+              <th>AAS</th>
+              {modelIds.map(mId => (
+                <th key={mId} style={{ fontSize: '11px', maxWidth: '100px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {mId}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {toolRows.map(row => (
+              <tr key={`${row.toolName}-${row.category}`} style={{ cursor: 'pointer' }} onClick={() => onSelectTool?.(row.toolName, row.category)}>
+                <td className="tool-cell">
+                  <span className="tool-logo">{row.logo || '📦'}</span>
+                  <span className="tool-name">{row.toolName}</span>
+                </td>
+                <td className="score-cell" style={{ color: getAASColor(row.aas) }}>{row.aas}</td>
+                {row.scores.map((rate, i) => (
+                  <td key={modelIds[i]} style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '13px',
+                    color: rate === null ? '#3f3f46' : rate >= 0.3 ? '#10B981' : rate > 0 ? '#F59E0B' : '#EF4444',
+                  }}>
+                    {rate === null ? '--' : `${Math.round(rate * 100)}%`}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -437,7 +587,7 @@ export default function Leaderboard({ onClose }) {
                 onSelectTool={(toolName, cat) => setToolDetail({ toolName, category: cat })}
               />
             )}
-            {activeTab === 'models' && <ModelTable />}
+            {activeTab === 'models' && <ModelTable categories={categories} onSelectTool={(toolName, cat) => setToolDetail({ toolName, category: cat })} />}
           </>
         )}
       </div>
