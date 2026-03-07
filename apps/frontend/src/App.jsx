@@ -1165,6 +1165,11 @@ export default function SurvivalRatingPlatform() {
                 <strong style={{ color: '#EF4444' }}>Low (20-39):</strong> Rarely picked by agents<br />
                 <strong style={{ color: '#71717a' }}>Minimal (&lt;20):</strong> Effectively invisible to AI agents
               </p>
+              <p style={{ marginTop: '16px' }}>
+                <a href="/methodology" style={{ color: '#10b981', textDecoration: 'none', fontWeight: '600' }}>
+                  Read the full methodology &rarr;
+                </a>
+              </p>
             </div>
           </div>
         </div>
@@ -1183,6 +1188,7 @@ export default function SurvivalRatingPlatform() {
             <div className="footer-col">
               <h4>Platform</h4>
               <a href="/" aria-label="Browse the Survival Index">Browse Index</a>
+              <a href="/methodology" aria-label="How AAS scores are computed">Methodology</a>
               <a href="https://github.com/selwyntheo/survivalindex" target="_blank" rel="noopener noreferrer" aria-label="View source code on GitHub">GitHub</a>
             </div>
             <div className="footer-col">
