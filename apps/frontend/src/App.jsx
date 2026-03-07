@@ -807,8 +807,12 @@ export default function SurvivalRatingPlatform() {
             <BarChart3 size={18} />
             Leaderboard
           </button>
-          <button className="header-btn secondary" onClick={() => setShowAbout(true)}>
+          <a href="/methodology" className="header-btn secondary" style={{ textDecoration: 'none' }}>
             <BookOpen size={18} />
+            Methodology
+          </a>
+          <button className="header-btn secondary" onClick={() => setShowAbout(true)}>
+            <Info size={18} />
             About
           </button>
           <button className="header-btn primary" onClick={() => setShowAddModal(true)}>
